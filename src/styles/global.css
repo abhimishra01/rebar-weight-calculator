@@ -174,11 +174,11 @@ select.rb-in { appearance: none; padding-right: 2rem; background-image: url("dat
 .rb-price .rb-in { width: 6.5rem; }
 .rb-price select.rb-in { width: auto; min-width: 8.5rem; }
 .rb-order { grid-column: 1 / -1; }
-.rb-order-cap { font-size: .75rem; color: #b9b6ab; font-weight: 600; margin-bottom: .4rem; }
+.rb-order-cap { font-size: .75rem; color: #f3f1ea; font-weight: 600; margin-bottom: .4rem; }
 .rb-chips { display: flex; flex-wrap: wrap; gap: .5rem; }
 .rb-chip { padding: .45rem .8rem; border: 1px solid #55565c; border-radius: 999px; font-size: .9rem; font-variant-numeric: tabular-nums; }
 .rb-chip b { font-family: var(--font-mono); font-weight: 700; }
-.rb-order-note { font-size: .78rem; color: #b9b6ab; margin-top: .4rem; }
+.rb-order-note { font-size: .78rem; color: #f3f1ea; margin-top: .4rem; }
 .rb-cost-line[hidden] { display: none; }
 .rb-pair { display: grid; grid-template-columns: 1fr; gap: 1rem; }
 @media (min-width: 640px) { .rb-pair { grid-template-columns: 1fr 1fr; } }
