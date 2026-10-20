@@ -1,17 +1,18 @@
 ---
 import Page from '../layouts/Page.astro';
 import site from '../site.config.ts';
+import { url } from '../lib/url.ts';
 ---
 <Page title="About" description={`About ${site.name}, a free rebar takeoff tool.`}>
   <p>{site.name} gives the weight of reinforcing bar from the bar size, the length and the quantity. It is built for estimators, contractors and engineers who need a number fast, in pounds, kilograms or tons.</p>
   <h2>Where the numbers come from</h2>
   <p>The weights are the nominal values in ASTM A615 for US bar sizes #3 to #18 and in ASTM A615M for the metric sizes. Plain round diameters use the density of steel, 7,850 kg per cubic meter.</p>
   <h2>Why we built it</h2>
-  <p>Most rebar calculators start with metric bars, hide the US sizes or ask you to enter one line at a time. We wanted a page that opens fast, works with one thumb on a job site, and handles a full list of bars with a copy and print option.</p>
+  <p>We wanted a page that opens fast, works with one thumb on a job site, and handles a full list of bars with a copy and print option.</p>
   <h2>How it works</h2>
   <p>The math runs in your browser. We do not ask you to create an account. Your lines are saved on your own device so you can come back to them.</p>
   <h2>Limits</h2>
   <p>The result is an estimate from nominal weights. Real bars vary, and laps, hooks and cut-offs change the order quantity. Check the final numbers against your drawings and your supplier before you order.</p>
   <h2>Contact</h2>
-  <p>Questions or ideas? Write to <a href={`mailto:${site.email}`}>{site.email}</a> or visit the <a href="/contact/">Contact page</a>.</p>
+  <p>Questions or ideas? Write to <a href={`mailto:${site.email}`}>{site.email}</a> or visit the <a href={url('contact/')}>Contact page</a>.</p>
 </Page>

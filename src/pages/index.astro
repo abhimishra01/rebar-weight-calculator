@@ -23,11 +23,6 @@ const jsonLd = [
   },
   {
     '@context': 'https://schema.org',
-    '@type': 'BreadcrumbList',
-    itemListElement: [{ '@type': 'ListItem', position: 1, name: site.name, item: `${base}/` }],
-  },
-  {
-    '@context': 'https://schema.org',
     '@type': 'FAQPage',
     mainEntity: faq.map((f) => ({
       '@type': 'Question',
@@ -43,14 +38,8 @@ const jsonLd = [
     <h1 class="max-w-3xl text-4xl font-extrabold leading-[1.05] tracking-tight [text-wrap:balance] sm:text-5xl">
       Rebar weight calculator
     </h1>
-    <p class="mt-4 max-w-2xl text-lg text-muted">{site.description}</p>
+    <p class="mt-4 max-w-2xl text-lg text-muted">Add one line per bar size and length. The totals update as you type, in pounds, kilograms and tons.</p>
     <div class="mt-8"><Tool /></div>
-    <p class="mt-6 text-sm text-muted no-print">
-      <a href="/about/" class="underline underline-offset-4 hover:text-ink">About</a> &middot;
-      <a href="/privacy/" class="underline underline-offset-4 hover:text-ink">Privacy Policy</a> &middot;
-      <a href="/terms/" class="underline underline-offset-4 hover:text-ink">Terms</a> &middot;
-      <a href="/contact/" class="underline underline-offset-4 hover:text-ink">Contact</a>
-    </p>
   </section>
   <Article />
   <Faq />
