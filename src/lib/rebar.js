@@ -144,3 +144,25 @@ export function fmt(n, digits = 2) {
   if (!Number.isFinite(n)) return '0';
   return n.toLocaleString('en-US', { minimumFractionDigits: digits, maximumFractionDigits: digits });
 }
+
+// Number of stock bars to buy for a total length. Plain division rounded up: it does not plan the cutting pattern.
+export function barsToOrder(totalLength, stockLength) {
+  if (!(totalLength > 0) || !(stockLength > 0)) return 0;
+  return Math.ceil(totalLength / stockLength - 1e-9);
+}
+
+// Stock lengths shown as chips: feet for US bars, meters for metric bars.
+export const STOCK_LENGTHS = { imperial: [20, 40, 60], metric: [6, 9, 12] };
+
+// Bars in one short ton (imperial, 2,000 lb) or one metric ton (metric, 1,000 kg) at a stock length. Not rounded.
+export function barsPerTon(mode, bar, length) {
+  return (mode === 'imperial' ? 2000 : 1000) / (bar.w * length);
+}
+
+// Material cost. unit: 'lb', 'ton' (short ton), 'kg' or 'tonne'. Returns NaN when the price is not a valid number.
+export function materialCost(priceText, unit, lb, kg) {
+  const p = parseNum(priceText);
+  if (!Number.isFinite(p) || p < 0) return NaN;
+  const per = { lb: lb, ton: lb / 2000, kg: kg, tonne: kg / 1000 }[unit];
+  return per === undefined ? NaN : p * per;
+}

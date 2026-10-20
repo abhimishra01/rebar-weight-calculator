@@ -4,6 +4,7 @@ import Tool from '../components/Tool.astro';
 import AdSlot from '../components/AdSlot.astro';
 import Article from '../components/Article.astro';
 import Faq from '../components/Faq.astro';
+import PageLinks from '../components/PageLinks.astro';
 import site from '../site.config.ts';
 import { faq } from '../data/faq.ts';
 
@@ -19,8 +20,21 @@ const jsonLd = [
     operatingSystem: 'Any',
     browserRequirements: 'Requires JavaScript',
     inLanguage: site.locale,
-    featureList: ['Bar sizes #3 to #18 (ASTM A615)', 'Metric bar sizes and round diameters', 'Totals in lb, kg, short tons and metric tons', 'Copy and print takeoff'],
+    featureList: ['Bar sizes #3 to #18 (ASTM A615)', 'Metric bar sizes and round diameters', 'Weight per foot and per bar on every line', 'Bars to order for 20, 40 and 60 ft stock', 'Material cost from a price per lb or ton', 'Totals in lb, kg, short tons and metric tons', 'Copy, print, CSV download and share link'],
     offers: { '@type': 'Offer', price: '0', priceCurrency: 'USD' },
+  },
+  {
+    '@context': 'https://schema.org',
+    '@type': 'HowTo',
+    name: 'How to calculate the weight of rebar',
+    totalTime: 'PT1M',
+    step: [
+      'Pick the bar size.',
+      'Enter the length of one bar in feet and inches.',
+      'Enter how many bars have that length.',
+      'Add a line for each other size or length.',
+      'Add a waste percentage for laps and cut-offs.',
+    ].map((text, i) => ({ '@type': 'HowToStep', position: i + 1, text })),
   },
   {
     '@context': 'https://schema.org',
@@ -44,5 +58,6 @@ const jsonLd = [
     <AdSlot />
   </section>
   <Article />
+  <PageLinks />
   <Faq />
 </Base>

@@ -1,0 +1,247 @@
+---
+import Base from '../layouts/Base.astro';
+import Tool from '../components/Tool.astro';
+import Faq from '../components/Faq.astro';
+import ChartTables from '../components/ChartTables.astro';
+import PageLinks from '../components/PageLinks.astro';
+import site from '../site.config.ts';
+import { pages } from '../data/pages.ts';
+import { url } from '../lib/url.ts';
+import { IMPERIAL_BARS, METRIC_BARS, ISO_BARS, BARS, findBar, kgPerM, lbPerFt, fmt, LB_PER_KG, barsPerTon } from '../lib/rebar.js';
+
+export function getStaticPaths() {
+  return pages.map((page) => ({ params: { slug: page.slug }, props: { page } }));
+}
+const { page } = Astro.props;
+const base = `https://${site.domain}`;
+const crumbs = {
+  '@context': 'https://schema.org',
+  '@type': 'BreadcrumbList',
+  itemListElement: [
+    { '@type': 'ListItem', position: 1, name: 'Rebar weight calculator', item: `${base}/` },
+    { '@type': 'ListItem', position: 2, name: page.h1.charAt(0).toUpperCase() + page.h1.slice(1), item: `${base}/${page.slug}/` },
+  ],
+};
+const cap = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
+
+// ---- size pages ----
+let faqItems: { q: string; a: string }[] = [];
+let lead = '';
+let view: any = null;
+if (page.kind === 'size') {
+  const imp = page.mode === 'imperial';
+  const bar = findBar(page.mode, page.bar)!;
+  const list = BARS[page.mode];
+  const i = list.findIndex((b) => b.id === bar.id);
+  const smaller = list[i - 1] ?? null;
+  const larger = list[i + 1] ?? null;
+  const lengths = imp ? [10, 20, 30, 40, 60] : [3, 6, 9, 12];
+  const lu = imp ? 'ft' : 'm';
+  const rows = lengths.map((L) => {
+    const w = bar.w * L; // lb (imperial) or kg (metric)
+    return { L, lb: imp ? w : w * LB_PER_KG, kg: imp ? w / LB_PER_KG : w, perTon: barsPerTon(page.mode, bar, L) };
+  });
+  const std = imp ? 20 : 12;
+  const stdRow = rows.find((r) => r.L === std)!;
+  const metricTwin = imp ? METRIC_BARS.find((m) => m.us === bar.id) : null;
+  const kgm = imp ? kgPerM(bar) : bar.w;
+  const lbft = imp ? bar.w : lbPerFt(bar);
+  const ex = imp ? { n: 50, L: 20 } : { n: 100, L: 12 };
+  const exKg = bar.w * ex.L * ex.n * (imp ? 1 / LB_PER_KG : 1);
+  const exLb = exKg * LB_PER_KG;
+  const label = bar.label.replace(/ \(.*\)/, '');
+  const tonName = imp ? 'short ton' : 'metric tonne';
+  const tonRows = imp ? [20, 40] : [6, 12];
+  lead = imp
+    ? `A ${label} rebar weighs ${bar.w.toFixed(3)} lb per foot (${fmt(kgm, 3)} kg per meter). One ${std} ft bar weighs ${fmt(stdRow.lb)} lb. Use the calculator for a full list of bars.`
+    : `A ${label} rebar weighs ${fmt(bar.w, 3)} kg per meter (${fmt(lbft, 3)} lb per foot). One ${std} m bar weighs ${fmt(stdRow.kg)} kg. Use the calculator for a full list of bars.`;
+  faqItems = [
+    { q: `How much does a ${std} ${lu} ${label} bar weigh?`, a: imp ? `A ${std} ft ${label} bar weighs ${fmt(stdRow.lb)} lb, or ${fmt(stdRow.kg)} kg. A 40 ft bar weighs ${fmt(rows[3].lb)} lb and a 60 ft bar weighs ${fmt(rows[4].lb)} lb.` : `A ${std} m ${label} bar weighs ${fmt(stdRow.kg)} kg, or ${fmt(stdRow.lb)} lb. A 6 m bar weighs ${fmt(rows[1].kg)} kg and a 9 m bar weighs ${fmt(rows[2].kg)} kg.` },
+    { q: `How many ${label} bars make a ton?`, a: imp ? `About ${fmt(rows[1].perTon, 0)} bars of 20 ft make one short ton (2,000 lb). With 40 ft bars the count is about ${fmt(rows[3].perTon, 0)}.` : `About ${fmt(rows[1].perTon, 0)} bars of 6 m, or ${fmt(rows[3].perTon, 0)} bars of 12 m, make one metric tonne (1,000 kg).` },
+    { q: `What is the diameter of ${label} rebar?`, a: imp ? `The nominal diameter is ${bar.dia} inch (${fmt(bar.dia * 25.4, 1)} mm). The bar number is the diameter in eighths of an inch. The cross-section area is ${bar.area.toFixed(2)} square inches.` : `The diameter is ${bar.dia} mm and the cross-section area is ${fmt(bar.area, 1)} square millimeters. The weight in kg per meter is the diameter squared divided by 162.2.` },
+    page.faq,
+  ];
+  view = { imp, bar, label, rows, lu, std, metricTwin, kgm, lbft, ex, exKg, exLb, smaller, larger, tonName, tonRows,
+    pct: (a: number, b: number) => Math.round((a / b - 1) * 100) };
+}
+
+// ---- chart-page helpers ----
+const sizeLinks = pages.filter((p) => p.kind === 'size');
+
+// ---- tons page ----
+const metricList = [...METRIC_BARS, ...ISO_BARS];
+
+const faqLd = faqItems.length ? { '@context': 'https://schema.org', '@type': 'FAQPage', mainEntity: faqItems.map((f) => ({ '@type': 'Question', name: f.q, acceptedAnswer: { '@type': 'Answer', text: f.a } })) } : null;
+const jsonLd = [crumbs, ...(faqLd ? [faqLd] : [])];
+const tool = page.kind === 'size' ? { mode: page.mode, size: page.bar } : undefined;
+---
+<Base title={page.title} description={page.description} jsonLd={jsonLd} rawTitle>
+  <section class="mx-auto max-w-5xl px-4 pt-10 sm:pt-16">
+    <nav aria-label="Breadcrumb" class="mb-3 text-sm text-muted">
+      <a href={url()} class="underline-offset-4 hover:underline">Rebar weight calculator</a> <span aria-hidden="true">/</span> <span>{cap(page.h1)}</span>
+    </nav>
+    <h1 class="max-w-3xl text-4xl font-extrabold leading-[1.05] tracking-tight [text-wrap:balance] sm:text-5xl">{cap(page.h1)}</h1>
+
+    {page.kind === 'size' && <p class="mt-4 max-w-2xl text-lg text-muted">{lead}</p>}
+    {page.kind === 'chart' && <p class="mt-4 max-w-2xl text-lg text-muted">Nominal weight, diameter and area for every US rebar size from #3 to #18, and for metric bars. Print the chart or use the calculator to total a bar list.</p>}
+    {page.kind === 'tons' && <p class="mt-4 max-w-2xl text-lg text-muted">Divide the weight of a ton by the weight of one bar. A 20 ft #4 bar weighs 13.36 lb, so a short ton holds about 150 of them. The chart below does this for every size.</p>}
+
+    {page.kind === 'chart' && <p class="mt-4"><button type="button" id="print-chart" class="rb-btn rb-btn-primary">Print this chart</button></p>}
+    <div class="mt-8"><Tool preset={tool} /></div>
+    {page.kind === 'size' && <p class="mt-3 text-sm text-muted">The calculator opens with an example of 10 bars. Change the length and quantity to match your order.</p>}
+  </section>
+
+  {page.kind === 'size' && (
+    <>
+      <section aria-labelledby="facts-h" class="mx-auto max-w-5xl px-4 pt-14">
+        <h2 id="facts-h" class="mb-4 text-2xl font-bold tracking-tight">{view.label} bar facts</h2>
+        <div class="tbl-wrap">
+          <table class="tbl" style="min-width:0">
+            <caption class="sr-only">{view.label} rebar size data</caption>
+            <tbody>
+              {view.imp ? (
+                <>
+                  <tr><th scope="row">Nominal diameter</th><td>{view.bar.dia} in ({fmt(view.bar.dia * 25.4, 1)} mm)</td></tr>
+                  <tr><th scope="row">Cross-section area</th><td>{view.bar.area.toFixed(2)} in&sup2;</td></tr>
+                  <tr><th scope="row">Weight per foot</th><td>{view.bar.w.toFixed(3)} lb/ft</td></tr>
+                  <tr><th scope="row">Weight per meter</th><td>{fmt(view.kgm, 3)} kg/m</td></tr>
+                  <tr><th scope="row">Feet in a short ton</th><td>{fmt(2000 / view.bar.w, 0)} ft</td></tr>
+                  {view.metricTwin && <tr><th scope="row">Metric name</th><td>{view.metricTwin.label.replace(/ \(.*\)/, '')} ({view.metricTwin.dia} mm)</td></tr>}
+                </>
+              ) : (
+                <>
+                  <tr><th scope="row">Diameter</th><td>{view.bar.dia} mm</td></tr>
+                  <tr><th scope="row">Cross-section area</th><td>{fmt(view.bar.area, 1)} mm&sup2;</td></tr>
+                  <tr><th scope="row">Weight per meter</th><td>{fmt(view.bar.w, 3)} kg/m</td></tr>
+                  <tr><th scope="row">Weight per foot</th><td>{fmt(view.lbft, 3)} lb/ft</td></tr>
+                  <tr><th scope="row">Meters in a metric tonne</th><td>{fmt(1000 / view.bar.w, 0)} m</td></tr>
+                </>
+              )}
+            </tbody>
+          </table>
+        </div>
+
+        <h2 class="mb-4 mt-10 text-2xl font-bold tracking-tight">{view.label} weight by bar length</h2>
+        <p class="swipe-hint mb-2 text-sm text-muted">Swipe sideways to see more columns.</p>
+        <div class="tbl-wrap" tabindex="0" role="region" aria-label={`${view.label} weight by bar length`}>
+          <table class="tbl">
+            <caption class="sr-only">Weight of one {view.label} bar by length</caption>
+            <thead><tr><th scope="col">Bar length</th><th scope="col">Weight, lb</th><th scope="col">Weight, kg</th><th scope="col">Bars per {view.imp ? 'short ton' : 'tonne'}</th></tr></thead>
+            <tbody>
+              {view.rows.map((r) => (
+                <tr><th scope="row" class="!text-left">{r.L} {view.lu}</th><td>{fmt(r.lb)}</td><td>{fmt(r.kg)}</td><td>{fmt(r.perTon, 1)}</td></tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+        <p class="prose-site -mt-3 text-sm text-muted"><strong>Source:</strong> {view.imp ? 'ASTM A615/A615M, Table 1 (nominal weights).' : 'Weight from the bar diameter and steel density of 7,850 kg/m³, matched to ASTM A615M for the M sizes.'} Checked 2026-10-20.</p>
+      </section>
+
+      <section aria-labelledby="ex-h" class="mx-auto max-w-5xl px-4 pt-10">
+        <article class="prose-site">
+          <h2 id="ex-h" style="margin-top:0">Worked example</h2>
+          {view.imp ? (
+            <p>You need {view.ex.n} {view.label} bars, each {view.ex.L} ft long. One bar weighs {view.ex.L} &times; {view.bar.w.toFixed(3)}, or {fmt(view.bar.w * view.ex.L)} lb. {view.ex.n} bars weigh {fmt(view.exLb)} lb. That is {fmt(view.exLb / 2000, 3)} short tons, or {fmt(view.exKg)} kg. With 5 percent added for laps and cut-offs the order weight is {fmt(view.exLb * 1.05)} lb.</p>
+          ) : (
+            <p>You need {view.ex.n} {view.label} bars, each {view.ex.L} m long. One bar weighs {view.ex.L} &times; {fmt(view.bar.w, 3)}, or {fmt(view.bar.w * view.ex.L)} kg. {view.ex.n} bars weigh {fmt(view.exKg)} kg. That is {fmt(view.exKg / 1000, 3)} metric tonnes, or {fmt(view.exLb)} lb. With 5 percent added for laps and cut-offs the order weight is {fmt(view.exKg * 1.05)} kg.</p>
+          )}
+          <h2>Where this bar is used</h2>
+          {page.uses.map((u) => <p>{u}</p>)}
+          <h2>{view.label} compared with nearby sizes</h2>
+          {view.imp ? (
+            <p>
+              {view.smaller && <>A {view.label} bar weighs {view.pct(view.bar.w, view.smaller.w)} percent more per foot than a {view.smaller.label} bar ({view.smaller.w.toFixed(3)} lb/ft). </>}
+              {view.larger && <>A {view.larger.label} bar weighs {view.pct(view.larger.w, view.bar.w)} percent more than a {view.label} bar ({view.larger.w.toFixed(3)} lb/ft). </>}
+              Moving one size up adds weight fast, because weight follows the area of the bar. Check the plans before you swap one size for another.
+            </p>
+          ) : (
+            <p>
+              {view.smaller && <>A {view.label} bar weighs {view.pct(view.bar.w, view.smaller.w)} percent more per meter than a {view.smaller.label} bar ({fmt(view.smaller.w, 3)} kg/m). </>}
+              {view.larger && <>A {view.larger.label} bar weighs {view.pct(view.larger.w, view.bar.w)} percent more than a {view.label} bar ({fmt(view.larger.w, 3)} kg/m). </>}
+              Weight follows the area of the bar, so it grows with the square of the diameter.
+            </p>
+          )}
+        </article>
+      </section>
+      <Faq items={faqItems} />
+    </>
+  )}
+
+  {page.kind === 'chart' && (
+    <>
+      <ChartTables />
+      <section aria-labelledby="read-h" class="mx-auto max-w-5xl px-4 pt-10">
+        <article class="prose-site">
+          <h2 id="read-h" style="margin-top:0">How to read the chart</h2>
+          <ul>
+            <li><strong>Bar:</strong> the size. In the US the number is the diameter in eighths of an inch.</li>
+            <li><strong>lb per ft and kg per m:</strong> the nominal weight. Multiply by the length to get the weight of a bar.</li>
+            <li><strong>lb per 20 ft bar:</strong> the weight of one stock bar. Multiply by the count for an order.</li>
+            <li><strong>Feet per ton:</strong> how much length a short ton of 2,000 lb holds.</li>
+          </ul>
+          <h2>Use the chart with the calculator</h2>
+          <p>The chart gives one number for each size. A real job has many sizes and lengths. Add one line to the calculator for each size and length, and it adds the weights for you. Then copy the list, download it as a CSV file, or print it.</p>
+          <p>For one size, see the size pages: {sizeLinks.filter((p) => p.mode === 'imperial').map((p, i, a) => <><a href={url(p.slug + '/')}>#{p.bar}</a>{i < a.length - 1 ? ', ' : '.'}</>)}</p>
+        </article>
+      </section>
+    </>
+  )}
+
+  {page.kind === 'tons' && (
+    <>
+      <section aria-labelledby="tons-h" class="mx-auto max-w-5xl px-4 pt-14">
+        <h2 id="tons-h" class="mb-4 text-2xl font-bold tracking-tight">Bars in a short ton, US sizes</h2>
+        <p class="swipe-hint mb-2 text-sm text-muted">Swipe sideways to see more columns.</p>
+        <div class="tbl-wrap" tabindex="0" role="region" aria-labelledby="tons-h">
+          <table class="tbl">
+            <caption class="sr-only">Number of rebar bars in one short ton, by size and bar length</caption>
+            <thead><tr><th scope="col">Bar</th><th scope="col">lb per ft</th><th scope="col">Feet per ton</th><th scope="col">20 ft bars</th><th scope="col">40 ft bars</th><th scope="col">60 ft bars</th></tr></thead>
+            <tbody>
+              {IMPERIAL_BARS.map((b) => (
+                <tr><th scope="row" class="!text-left">{b.label}</th><td>{b.w.toFixed(3)}</td><td>{fmt(2000 / b.w, 0)}</td><td>{fmt(barsPerTon('imperial', b, 20), 1)}</td><td>{fmt(barsPerTon('imperial', b, 40), 1)}</td><td>{fmt(barsPerTon('imperial', b, 60), 1)}</td></tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+        <p class="prose-site -mt-3 text-sm text-muted">A short ton is 2,000 lb. Counts are not rounded, so you can scale them. <strong>Source:</strong> ASTM A615/A615M, Table 1 (nominal weights). Checked 2026-10-20.</p>
+
+        <h2 class="mb-4 mt-10 text-2xl font-bold tracking-tight">Bars in a metric tonne</h2>
+        <p class="swipe-hint mb-2 text-sm text-muted">Swipe sideways to see more columns.</p>
+        <div class="tbl-wrap" tabindex="0" role="region" aria-label="Bars in a metric tonne">
+          <table class="tbl">
+            <caption class="sr-only">Number of rebar bars in one metric tonne, by size and bar length</caption>
+            <thead><tr><th scope="col">Bar</th><th scope="col">kg per m</th><th scope="col">Meters per tonne</th><th scope="col">6 m bars</th><th scope="col">9 m bars</th><th scope="col">12 m bars</th></tr></thead>
+            <tbody>
+              {metricList.map((b) => (
+                <tr><th scope="row" class="!text-left">{b.label}</th><td>{fmt(b.w, 3)}</td><td>{fmt(1000 / b.w, 0)}</td><td>{fmt(barsPerTon('metric', b, 6), 1)}</td><td>{fmt(barsPerTon('metric', b, 9), 1)}</td><td>{fmt(barsPerTon('metric', b, 12), 1)}</td></tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </section>
+      <section aria-labelledby="tons-how" class="mx-auto max-w-5xl px-4 pt-10">
+        <article class="prose-site">
+          <h2 id="tons-how" style="margin-top:0">How to work it out</h2>
+          <p>Bars in a ton equals the weight of a ton divided by the weight of one bar. The weight of one bar is the pounds per foot times its length.</p>
+          <p>Example: a 40 ft #6 bar weighs 40 &times; 1.502, or 60.08 lb. A short ton holds 2,000 / 60.08, or 33.3 of them. Round down to whole bars when you load a truck, and expect a few percent of difference from the mill weight.</p>
+          <h2>Ton, short ton and tonne</h2>
+          <p>In US trade, a ton is the short ton of 2,000 lb. A metric tonne is 1,000 kg, or 2,204.6 lb. Many quotes in the US also use CWT, which is 100 lb. Check the unit on each quote before you compare prices.</p>
+          <p>The calculator above shows your total in both. Enter a price per lb or per ton to see a material cost.</p>
+        </article>
+      </section>
+    </>
+  )}
+
+  <PageLinks current={page.slug} />
+</Base>
+
+<script>
+  const btn = document.getElementById('print-chart');
+  if (btn) {
+    btn.addEventListener('click', () => {
+      document.body.classList.add('print-chart');
+      window.print();
+    });
+    window.addEventListener('afterprint', () => document.body.classList.remove('print-chart'));
+  }
+</script>

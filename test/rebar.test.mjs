@@ -161,3 +161,89 @@ test('takeoff with bad waste adds no waste row', () => {
   assert.equal(m.wastePct, 0);
   assert.doesNotMatch(takeoffText(m), /Waste/);
 });
+
+// ---- gap fix: stock lengths, cost, share link, CSV, line help ----
+import { barsToOrder, barsPerTon, materialCost } from '../src/lib/rebar.js';
+import { encodeShare, decodeShare } from '../src/lib/share.js';
+import { takeoffCsv } from '../src/lib/takeoff.js';
+import { infoText } from '../src/lib/rows.js';
+
+test('barsToOrder rounds up and ignores bad input', () => {
+  assert.equal(barsToOrder(2000, 20), 100);
+  assert.equal(barsToOrder(2000.1, 20), 101);
+  assert.equal(barsToOrder(0, 20), 0);
+  assert.equal(barsToOrder(100, 0), 0);
+  assert.equal(barsToOrder(NaN, 20), 0);
+});
+
+test('bars per ton: #4 in 20 ft is about 150, 12 mm in 12 m is about 94', () => {
+  close(barsPerTon('imperial', findBar('imperial', '4'), 20), 149.7, 0.1);
+  close(barsPerTon('metric', findBar('metric', 'D12'), 12), 93.9, 0.1);
+});
+
+test('material cost by lb, short ton, kg and metric tonne', () => {
+  close(materialCost('0.5', 'lb', 2000, 907.18), 1000, 0.01);
+  close(materialCost('900', 'ton', 2000, 907.18), 900, 0.01);
+  close(materialCost('1.2', 'kg', 2204.62, 1000), 1200, 0.01);
+  close(materialCost('1,200', 'tonne', 2204.62, 1000), 1200, 0.01);
+  assert.ok(Number.isNaN(materialCost('abc', 'lb', 1, 1)));
+  assert.ok(Number.isNaN(materialCost('-1', 'lb', 1, 1)));
+  assert.ok(Number.isNaN(materialCost('1', 'bogus', 1, 1)));
+});
+
+test('takeoff adds a cost row only for a valid price', () => {
+  const lines = [{ size: '4', a: '20', b: '', qty: '100' }];
+  const withPrice = takeoffModel('imperial', lines, '0', { text: '0.60', unit: 'lb' });
+  close(withPrice.cost, 801.6, 0.01);
+  assert.match(takeoffText(withPrice), /Material cost \(\$0\.60 per lb\)\t.*\t801\.60/);
+  assert.match(takeoffHtml(withPrice, 'x'), /\$801\.60/);
+  for (const bad of [{ text: '', unit: 'lb' }, { text: 'x', unit: 'lb' }, { text: '0', unit: 'lb' }, undefined]) {
+    assert.equal(takeoffModel('imperial', lines, '0', bad).cost, null);
+  }
+  assert.doesNotMatch(takeoffText(takeoffModel('imperial', lines, '0')), /Material cost/);
+});
+
+test('price text can not inject HTML into the print sheet', () => {
+  const m = takeoffModel('imperial', [{ size: '4', a: '20', b: '', qty: '1' }], '0', { text: '<img src=x>', unit: 'lb' });
+  assert.equal(m.cost, null);
+  assert.doesNotMatch(takeoffHtml(m, 'x'), /<img/);
+});
+
+test('CSV quotes every cell and doubles inch marks', () => {
+  const m = takeoffModel('imperial', [{ size: '5', a: '12', b: '3', qty: '2' }], '5');
+  const csv = takeoffCsv(m);
+  assert.match(csv, /^"Bar","Length \(ft-in\)","Qty"/);
+  assert.match(csv, /"#5","12'-3""","2"/);
+  assert.match(csv, /"Waste 5%"/);
+  assert.ok(csv.includes('\r\n'));
+});
+
+test('share link round trip', () => {
+  const state = { mode: 'imperial', waste: '5', price: '0.6', priceUnit: 'ton', lines: [{ size: '5', a: "12'", b: '3', qty: '10' }, { size: '4', a: '20', b: '', qty: '1,200' }] };
+  const back = decodeShare('#' + encodeShare(state));
+  assert.deepEqual(back, state);
+  const metric = { mode: 'metric', waste: '0', price: '', priceUnit: 'kg', lines: [{ size: 'D12', a: '6', b: '', qty: '4' }] };
+  assert.deepEqual(decodeShare(encodeShare(metric)), metric);
+});
+
+test('share link rejects bad data and cleans odd fields', () => {
+  for (const h of ['', '#', '#t=', '#t=%7B', '#t=' + encodeURIComponent('{"m":"i","l":[]}'), '#t=' + encodeURIComponent('{"m":"x","l":[["5","1","","1"]]}'), '#t=' + encodeURIComponent('{"m":"i","l":[["99","1","","1"]]}'), '#t=' + encodeURIComponent('{"m":"i","l":[1]}'), '#other=1']) {
+    assert.equal(decodeShare(h), null, h);
+  }
+  const odd = decodeShare('#t=' + encodeURIComponent(JSON.stringify({ m: 'i', w: 'abc', p: 'zzz', u: 'kg', l: [['5', 'x'.repeat(100), null, 3]] })));
+  assert.equal(odd.waste, '0');
+  assert.equal(odd.price, '');
+  assert.equal(odd.priceUnit, 'lb'); // kg is not an imperial unit
+  assert.equal(odd.lines[0].a.length, 24);
+  assert.equal(odd.lines[0].b, '');
+  // too many lines
+  assert.equal(decodeShare('#t=' + encodeURIComponent(JSON.stringify({ m: 'i', l: Array(201).fill(['5', '1', '', '1']) }))), null);
+});
+
+test('line help shows weight per foot and per bar', () => {
+  assert.equal(infoText('imperial', { size: '5', a: '', b: '', qty: '' }), '#5 bar: 1.043 lb/ft (1.552 kg/m). One 20 ft bar: 20.86 lb.');
+  assert.match(infoText('imperial', { size: '5', a: '12', b: '3', qty: '' }), /One 12 ft 3 in bar: 12\.78 lb\./);
+  assert.match(infoText('imperial', { size: '4', a: 'abc', b: '', qty: '' }), /One 20 ft bar: 13\.36 lb\./);
+  assert.match(infoText('metric', { size: 'D12', a: '', b: '', qty: '' }), /^12 mm bar: 0\.888 kg\/m \(0\.597 lb\/ft\)\. One 12 m bar: 10\.65 kg\.$/);
+  assert.equal(infoText('imperial', { size: 'zz', a: '', b: '', qty: '' }), '');
+});

@@ -1,0 +1,34 @@
+---
+import { IMPERIAL_BARS, METRIC_BARS, ISO_BARS, kgPerM, lbPerFt, fmt } from '../lib/rebar.js';
+---
+<section id="chart-print" aria-labelledby="chart-h" class="mx-auto max-w-5xl px-4 pt-12">
+  <h2 id="chart-h" class="mb-4 text-2xl font-bold tracking-tight">Rebar weight chart: US bar sizes #3 to #18</h2>
+  <p class="swipe-hint mb-2 text-sm text-muted">Swipe sideways to see more columns.</p>
+  <div class="tbl-wrap" tabindex="0" role="region" aria-labelledby="chart-h">
+    <table class="tbl">
+      <caption class="sr-only">ASTM A615 nominal weight of US rebar sizes</caption>
+      <thead><tr><th scope="col">Bar</th><th scope="col">Diameter, in</th><th scope="col">Area, in&sup2;</th><th scope="col">lb per ft</th><th scope="col">kg per m</th><th scope="col">lb per 20 ft bar</th><th scope="col">Feet per ton</th></tr></thead>
+      <tbody>
+        {IMPERIAL_BARS.map((b) => (
+          <tr><th scope="row" class="!text-left">{b.label}</th><td>{b.dia.toFixed(3)}</td><td>{b.area.toFixed(2)}</td><td>{b.w.toFixed(3)}</td><td>{fmt(kgPerM(b), 3)}</td><td>{fmt(b.w * 20)}</td><td>{fmt(2000 / b.w, 0)}</td></tr>
+        ))}
+      </tbody>
+    </table>
+  </div>
+  <p class="prose-site -mt-3 mb-8 text-sm text-muted">Feet per ton uses the short ton of 2,000 lb. Bars come in 20, 40 and 60 foot stock lengths.</p>
+  <p class="prose-site -mt-2 mb-8 text-sm text-muted"><strong>Source:</strong> ASTM A615/A615M, Table 1 (nominal weights). Checked 2026-10-20.</p>
+
+  <h2 class="mb-4 text-2xl font-bold tracking-tight">Metric rebar weight chart</h2>
+  <p class="swipe-hint mb-2 text-sm text-muted">Swipe sideways to see more columns.</p>
+  <div class="tbl-wrap" tabindex="0" role="region" aria-label="Metric rebar weight chart">
+    <table class="tbl">
+      <caption class="sr-only">ASTM A615M metric bar sizes and round diameters</caption>
+      <thead><tr><th scope="col">Bar</th><th scope="col">Diameter, mm</th><th scope="col">Area, mm&sup2;</th><th scope="col">kg per m</th><th scope="col">lb per ft</th><th scope="col">kg per 12 m bar</th></tr></thead>
+      <tbody>
+        {[...METRIC_BARS, ...ISO_BARS].map((b) => (
+          <tr><th scope="row" class="!text-left">{b.label}</th><td>{b.dia.toFixed(1)}</td><td>{fmt(b.area, 0)}</td><td>{b.w.toFixed(3)}</td><td>{fmt(lbPerFt(b), 3)}</td><td>{fmt(b.w * 12)}</td></tr>
+        ))}
+      </tbody>
+    </table>
+  </div>
+</section>

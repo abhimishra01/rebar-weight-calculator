@@ -147,6 +147,12 @@ select.rb-in { appearance: none; padding-right: 2rem; background-image: url("dat
   #print-area { padding: 0; font-family: var(--font-sans); }
   #print-area h1 { font-size: 20pt; margin-bottom: 4pt; }
   #print-area p { margin-bottom: 12pt; }
+  body.print-chart #chart-print, body.print-chart #chart-print * { visibility: visible; }
+  body.print-chart #chart-print { position: absolute; left: 0; top: 0; width: 100%; padding: 0; }
+  body.print-chart .swipe-hint { display: none; }
+  body.print-chart .tbl-wrap { overflow: visible; border: 0; }
+  body.print-chart .tbl { min-width: 0; font-size: 10pt; }
+  body.print-chart .tbl th, body.print-chart .tbl td { white-space: normal; background: #fff !important; color: #000; position: static; }
   #print-area table { width: 100%; border-collapse: collapse; font-size: 11pt; }
   #print-area th, #print-area td { border: 1px solid #000; padding: 4pt 6pt; text-align: right; }
   #print-area th:first-child, #print-area td:first-child, #print-area tfoot th { text-align: left; }
@@ -161,3 +167,19 @@ select.rb-in { appearance: none; padding-right: 2rem; background-image: url("dat
 @media (min-width: 640px) { .rb-sticky { display: none !important; } }
 .swipe-hint { display: none; }
 @media (max-width: 639px) { .swipe-hint { display: block; } }
+
+/* line help, stock-length chips, price, share */
+.rb-info { grid-column: 1 / -1; font-size: .85rem; color: var(--muted); font-variant-numeric: tabular-nums; }
+.rb-price { display: flex; gap: .5rem; }
+.rb-price .rb-in { width: 6.5rem; }
+.rb-price select.rb-in { width: auto; min-width: 8.5rem; }
+.rb-order { grid-column: 1 / -1; }
+.rb-order-cap { font-size: .75rem; color: #b9b6ab; font-weight: 600; margin-bottom: .4rem; }
+.rb-chips { display: flex; flex-wrap: wrap; gap: .5rem; }
+.rb-chip { padding: .45rem .8rem; border: 1px solid #55565c; border-radius: 999px; font-size: .9rem; font-variant-numeric: tabular-nums; }
+.rb-chip b { font-family: var(--font-mono); font-weight: 700; }
+.rb-order-note { font-size: .78rem; color: #b9b6ab; margin-top: .4rem; }
+.rb-cost-line[hidden] { display: none; }
+.rb-pair { display: grid; grid-template-columns: 1fr; gap: 1rem; }
+@media (min-width: 640px) { .rb-pair { grid-template-columns: 1fr 1fr; } }
+.tbl tbody tr:last-child th { border-bottom: 0; }

@@ -1,24 +1,36 @@
 ---
 import { rowHtml, DEFAULT_LINE } from '../lib/rows.js';
-import { totals, fmt } from '../lib/rebar.js';
-const first = DEFAULT_LINE.imperial;
-const t = totals('imperial', [first], 0);
+import { totals, fmt, barsToOrder, STOCK_LENGTHS } from '../lib/rebar.js';
+// preset: a size page opens with that bar and a small example (10 bars of 20 ft, or 3 m x 10 for metric).
+interface Props { preset?: { mode: 'imperial' | 'metric'; size: string } }
+const { preset } = Astro.props;
+const pmode = preset?.mode ?? 'imperial';
+const imp0 = pmode === 'imperial';
+const first = preset ? { size: preset.size, a: imp0 ? '20' : '12', b: '', qty: '10' } : DEFAULT_LINE.imperial;
+const t = totals(pmode, [first], 0);
 ---
-<section id="tool" aria-label="Rebar weight calculator" class="rb rounded-2xl border border-line bg-card sm:shadow-[6px_6px_0_0_var(--line)]" data-mode="imperial">
+<section id="tool" aria-label="Rebar weight calculator" class="rb rounded-2xl border border-line bg-card sm:shadow-[6px_6px_0_0_var(--line)]" data-mode={pmode} data-preset={preset ? `${preset.mode}:${preset.size}` : undefined}>
   <div class="rb-rib" aria-hidden="true"></div>
   <div class="rb-top">
     <fieldset class="rb-seg">
       <legend class="sr-only">Units</legend>
-      <label><input type="radio" name="units" value="imperial" checked><span>US bars #3 to #18<small>feet, inches, lb</small></span></label>
-      <label><input type="radio" name="units" value="metric"><span>Metric bars<small>meters, kg</small></span></label>
+      <label><input type="radio" name="units" value="imperial" checked={imp0}><span>US bars #3 to #18<small>feet, inches, lb</small></span></label>
+      <label><input type="radio" name="units" value="metric" checked={!imp0}><span>Metric bars<small>meters, kg</small></span></label>
     </fieldset>
     <div class="rb-f rb-waste">
       <label for="waste">Waste or laps, %</label>
       <input id="waste" class="rb-in" type="text" inputmode="decimal" autocomplete="off" value="0" placeholder="0">
     </div>
+    <div class="rb-f rb-pricef">
+      <label for="price">Price (optional)</label>
+      <div class="rb-price">
+        <input id="price" class="rb-in" type="text" inputmode="decimal" autocomplete="off" value="" placeholder="0.00">
+        <select id="price-unit" class="rb-in" aria-label="Price unit"></select>
+      </div>
+    </div>
   </div>
 
-  <div id="rows" class="rb-rows" set:html={rowHtml('imperial', first, 0, false)}></div>
+  <div id="rows" class="rb-rows" set:html={rowHtml(pmode, first, 0, false)}></div>
 
   <div class="rb-add">
     <button type="button" id="add" class="rb-btn rb-btn-ghost">
@@ -31,20 +43,28 @@ const t = totals('imperial', [first], 0);
   <div class="rb-totals" id="totals" role="region" aria-label="Totals">
     <div class="rb-main" aria-live="polite" aria-atomic="true">
       <p class="rb-cap">Total weight</p>
-      <p class="rb-big"><span id="main-val">{fmt(t.lb)}</span> <span id="main-unit">lb</span></p>
-      <p class="rb-sub" id="main-sub">{fmt(t.shortTons, 3)} short tons</p>
+      <p class="rb-big"><span id="main-val">{fmt(imp0 ? t.lb : t.kg)}</span> <span id="main-unit">{imp0 ? 'lb' : 'kg'}</span></p>
+      <p class="rb-sub" id="main-sub">{imp0 ? `${fmt(t.shortTons, 3)} short tons (2,000 lb)` : `${fmt(t.metricTonnes, 3)} metric tons`}</p>
     </div>
     <dl class="rb-grid">
-      <div><dt id="alt1-cap">Kilograms</dt><dd id="alt1">{fmt(t.kg)}</dd></div>
-      <div><dt id="alt2-cap">Metric tons</dt><dd id="alt2">{fmt(t.metricTonnes, 3)}</dd></div>
-      <div><dt>Total length</dt><dd id="len">{fmt(t.lengthFt, 1)} ft</dd></div>
+      <div><dt id="alt1-cap">{imp0 ? 'Kilograms' : 'Pounds'}</dt><dd id="alt1">{fmt(imp0 ? t.kg : t.lb)}</dd></div>
+      <div><dt id="alt2-cap">{imp0 ? 'Metric tons' : 'Short tons'}</dt><dd id="alt2">{fmt(imp0 ? t.metricTonnes : t.shortTons, 3)}</dd></div>
+      <div><dt>Total length</dt><dd id="len">{imp0 ? `${fmt(t.lengthFt, 1)} ft` : `${fmt(t.lengthM, 1)} m`}</dd></div>
       <div><dt>Bars</dt><dd id="count">{t.count}</dd></div>
+      <div id="cost-wrap" hidden><dt>Material cost</dt><dd id="cost"></dd></div>
     </dl>
+    <div class="rb-order" id="order" hidden>
+      <p class="rb-order-cap" id="order-cap">Bars to order, by stock length</p>
+      <div class="rb-chips" id="chips"></div>
+      <p class="rb-order-note">Total length plus waste, divided by the stock length and rounded up. Cut patterns are not planned.</p>
+    </div>
     <p id="note" class="rb-note" role="status"></p>
   </div>
 
   <div class="rb-actions">
     <button type="button" id="copy" class="rb-btn rb-btn-primary">Copy takeoff</button>
+    <button type="button" id="share" class="rb-btn">Copy link</button>
+    <button type="button" id="csv" class="rb-btn">Download CSV</button>
     <button type="button" id="print" class="rb-btn">Print</button>
     <button type="button" id="clear" class="rb-btn rb-btn-ghost">Clear</button>
     <span id="copied" class="rb-copied" role="status"></span>
@@ -53,16 +73,17 @@ const t = totals('imperial', [first], 0);
 
 <div id="sticky-total" class="rb-sticky" hidden aria-hidden="true">
   <span class="rb-sticky-cap">Total</span>
-  <span class="rb-sticky-val"><span id="sticky-val">{fmt(t.lb)}</span> <span id="sticky-unit">lb</span></span>
-  <span class="rb-sticky-alt" id="sticky-alt">{fmt(t.kg)} kg</span>
+  <span class="rb-sticky-val"><span id="sticky-val">{fmt(imp0 ? t.lb : t.kg)}</span> <span id="sticky-unit">{imp0 ? 'lb' : 'kg'}</span></span>
+  <span class="rb-sticky-alt" id="sticky-alt">{imp0 ? `${fmt(t.kg)} kg` : `${fmt(t.lb)} lb`}</span>
 </div>
 
 <section id="print-area" class="print-only" aria-hidden="true"></section>
 
 <script>
-  import { totals, lineResult, fmt, parseNum, barLength, findBar } from '../lib/rebar.js';
-  import { rowHtml, DEFAULT_LINE } from '../lib/rows.js';
-  import { takeoffModel, takeoffText, takeoffHtml } from '../lib/takeoff.js';
+  import { totals, lineResult, fmt, parseNum, barLength, findBar, barsToOrder, materialCost, STOCK_LENGTHS } from '../lib/rebar.js';
+  import { rowHtml, infoText, DEFAULT_LINE } from '../lib/rows.js';
+  import { takeoffModel, takeoffText, takeoffHtml, takeoffCsv } from '../lib/takeoff.js';
+  import { encodeShare, decodeShare } from '../lib/share.js';
 
   type Line = { size: string; a: string; b: string; qty: string };
   type Mode = 'imperial' | 'metric';
@@ -71,15 +92,25 @@ const t = totals('imperial', [first], 0);
   const root = $('tool');
   const rowsEl = $('rows');
   const wasteEl = $('waste') as HTMLInputElement;
+  const priceEl = $('price') as HTMLInputElement;
+  const unitEl = $('price-unit') as HTMLSelectElement;
 
   let mode: Mode = 'imperial';
   const store: Record<Mode, Line[]> = { imperial: [{ ...DEFAULT_LINE.imperial }], metric: [{ ...DEFAULT_LINE.metric }] };
   let waste = '0';
+  let price = '';
+  const PRICE_UNITS: Record<Mode, [string, string][]> = {
+    imperial: [['lb', '$ per lb'], ['ton', '$ per short ton']],
+    metric: [['kg', '$ per kg'], ['tonne', '$ per metric ton']],
+  };
+  let priceUnit = 'lb';
   const KEY = 'rebar-takeoff-v1';
+  // A size page (data-preset) starts from its own example and never reads or writes the saved takeoff.
+  const preset = root.dataset.preset ? (root.dataset.preset.split(':') as [Mode, string]) : null;
 
   // Read saved lines into fresh objects first, then apply, so bad data never leaves a half-loaded state.
   try {
-    const raw = localStorage.getItem(KEY);
+    const raw = preset ? null : localStorage.getItem(KEY);
     const s = raw ? JSON.parse(raw) : null;
     if (s && (s.mode === 'imperial' || s.mode === 'metric')) {
       const next: Record<Mode, Line[]> = { imperial: store.imperial, metric: store.metric };
@@ -97,11 +128,27 @@ const t = totals('imperial', [first], 0);
       store.metric = next.metric;
       mode = s.mode;
       waste = String(s.waste ?? '0');
+      price = Number.isNaN(parseNum(s.price ?? '')) ? '' : String(s.price ?? '');
+      priceUnit = PRICE_UNITS[mode].some(([u]) => u === s.priceUnit) ? s.priceUnit : PRICE_UNITS[mode][0][0];
     }
   } catch {}
+  if (preset) {
+    mode = preset[0];
+    priceUnit = PRICE_UNITS[mode][0][0];
+    store[mode] = [{ size: preset[1], a: mode === 'imperial' ? '20' : '12', b: '', qty: '10' }];
+  }
+  // A shared link (#t=...) wins over everything else.
+  const shared = decodeShare(location.hash);
+  if (shared) {
+    store[shared.mode] = shared.lines;
+    mode = shared.mode;
+    waste = shared.waste;
+    price = shared.price;
+    priceUnit = shared.priceUnit;
+  }
 
   const lines = () => store[mode];
-  const save = () => { try { localStorage.setItem(KEY, JSON.stringify({ mode, lines: store, waste })); } catch {} };
+  const save = () => { if (preset) return; try { localStorage.setItem(KEY, JSON.stringify({ mode, lines: store, waste, price, priceUnit })); } catch {} };
 
   function renderRows(focusLast = false) {
     const ls = lines();
@@ -109,6 +156,8 @@ const t = totals('imperial', [first], 0);
     root.dataset.mode = mode;
     (document.querySelector(`input[name=units][value=${mode}]`) as HTMLInputElement).checked = true;
     wasteEl.value = waste;
+    priceEl.value = price;
+    unitEl.innerHTML = PRICE_UNITS[mode].map(([u, t]) => `<option value="${u}"${u === priceUnit ? ' selected' : ''}>${t}</option>`).join('');
     const full = ls.length >= MAX_LINES;
     ($('add') as HTMLButtonElement).disabled = full;
     $('hint').textContent = full ? `${MAX_LINES} lines is the limit.` : 'Press Enter in a quantity box to add the next line.';
@@ -134,6 +183,7 @@ const t = totals('imperial', [first], 0);
       const blank = !line.a.trim() && !(line.b || '').trim() && !line.qty.trim();
       out.textContent = lineLabel(r, blank);
       out.classList.toggle('rb-bad', !r.ok && !blank);
+      (row.querySelector('[data-info]') as HTMLElement).textContent = infoText(mode, line);
       const lenBad = Number.isNaN(barLength(mode, line.a, line.b));
       row.querySelectorAll('[data-k]').forEach((el) => {
         const k = (el as HTMLElement).dataset.k!;
@@ -157,9 +207,20 @@ const t = totals('imperial', [first], 0);
     $('sticky-unit').textContent = unit1();
     $('sticky-alt').textContent = imp ? `${fmt(t.kg)} kg` : `${fmt(t.lb)} lb`;
     const w = parseNum(waste);
+    // Bars to order: total length plus the waste allowance, divided by each stock length.
+    const allow = Number.isFinite(w) && w > 0 ? 1 + w / 100 : 1;
+    const totalLen = (imp ? t.lengthFt : t.lengthM) * allow;
+    const stocks = STOCK_LENGTHS[mode];
+    $('order').hidden = !(totalLen > 0);
+    $('chips').innerHTML = stocks.map((L) => `<span class="rb-chip">${L} ${imp ? 'ft' : 'm'}: <b>${barsToOrder(totalLen, L).toLocaleString('en-US')}</b> bars</span>`).join('');
+    const cost = materialCost(price, priceUnit, t.lb, t.kg);
+    const hasPrice = price.trim() !== '' && parseNum(price) > 0;
+    $('cost-wrap').hidden = !(hasPrice && Number.isFinite(cost));
+    $('cost').textContent = Number.isFinite(cost) ? '$' + fmt(cost) : '';
     const notes: string[] = [];
     if (Number.isNaN(w) || w < 0) notes.push('Waste must be a number such as 5.');
     else if (w > 0) notes.push(`Includes ${w}% extra. Net weight ${fmt(imp ? t.netLb : t.netKg)} ${unit1()}.`);
+    if (price.trim() !== '' && Number.isNaN(parseNum(price))) notes.push('Price must be a number such as 0.85.');
     if (t.invalid) notes.push(`${t.invalid} line${t.invalid > 1 ? 's' : ''} left out. Use whole numbers for quantity and numbers for length.`);
     $('note').textContent = notes.join(' ');
     save();
@@ -193,31 +254,49 @@ const t = totals('imperial', [first], 0);
   }
   $('add').addEventListener('click', addLine);
   wasteEl.addEventListener('input', () => { waste = wasteEl.value; update(); });
+  priceEl.addEventListener('input', () => { price = priceEl.value; update(); });
+  unitEl.addEventListener('change', () => { priceUnit = unitEl.value; update(); });
   document.querySelectorAll<HTMLInputElement>('input[name=units]').forEach((r) =>
-    r.addEventListener('change', () => { mode = r.value as Mode; renderRows(); })
+    r.addEventListener('change', () => { mode = r.value as Mode; priceUnit = PRICE_UNITS[mode][0][0]; renderRows(); })
   );
   $('clear').addEventListener('click', () => {
     store[mode] = [{ ...DEFAULT_LINE[mode] }];
     waste = '0';
+    price = '';
     renderRows();
     (rowsEl.querySelector('[data-k=size]') as HTMLElement)?.focus();
   });
 
   let timer: number | undefined;
   const say = (msg: string) => { const c = $('copied'); c.textContent = msg; clearTimeout(timer); timer = window.setTimeout(() => (c.textContent = ''), 2500); };
-  $('copy').addEventListener('click', async () => {
-    const text = takeoffText(takeoffModel(mode, lines(), waste));
-    try { await navigator.clipboard.writeText(text); say('Copied. Paste it into a spreadsheet.'); }
+  const priceInfo = () => ({ text: price, unit: priceUnit });
+  async function toClipboard(text: string, ok: string, fail: string) {
+    try { await navigator.clipboard.writeText(text); say(ok); }
     catch {
       const ta = document.createElement('textarea'); ta.value = text; document.body.appendChild(ta); ta.select();
-      try { document.execCommand('copy'); say('Copied. Paste it into a spreadsheet.'); } catch { say('Copy failed. Select the numbers by hand.'); }
+      try { document.execCommand('copy'); say(ok); } catch { say(fail); }
       ta.remove();
     }
+  }
+  $('share').addEventListener('click', () => {
+    const link = `${location.origin}${location.pathname}#${encodeShare({ mode, lines: lines(), waste, price, priceUnit })}`;
+    toClipboard(link, 'Link copied. It opens this takeoff.', 'Copy failed. Copy the address bar instead.');
   });
+  $('csv').addEventListener('click', () => {
+    const blob = new Blob(['\ufeff' + takeoffCsv(takeoffModel(mode, lines(), waste, priceInfo()))], { type: 'text/csv;charset=utf-8' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'rebar-takeoff.csv';
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+    say('CSV downloaded.');
+  });
+  $('copy').addEventListener('click', () =>
+    toClipboard(takeoffText(takeoffModel(mode, lines(), waste, priceInfo())), 'Copied. Paste it into a spreadsheet.', 'Copy failed. Select the numbers by hand.'));
 
   // The print sheet is built right before any print (button, Ctrl+P or browser menu) and cleared after.
   window.addEventListener('beforeprint', () => {
-    $('print-area').innerHTML = takeoffHtml(takeoffModel(mode, lines(), waste), new Date().toLocaleDateString('en-US'));
+    $('print-area').innerHTML = takeoffHtml(takeoffModel(mode, lines(), waste, priceInfo()), new Date().toLocaleDateString('en-US'));
   });
   window.addEventListener('afterprint', () => { $('print-area').innerHTML = ''; });
   $('print').addEventListener('click', () => window.print());

@@ -57,3 +57,25 @@
 18. Rebar weight per ton in feet
 19. Rebar weight kg to lb
 20. Rebar weight for a slab (waste and laps guide)
+
+## Gap fix (2026-10-20)
+Source: comparison/rebar-weight-calculator.md.
+
+### Done
+- Must 1: every line shows lb/ft and kg/m for the size and the weight of one bar ("#5 bar: 1.043 lb/ft (1.552 kg/m). One 20 ft bar: 20.86 lb."). It uses the typed length when valid, else a 20 ft (or 12 m) stock bar.
+- Must 2: "Bars to order" chips for 20, 40, 60 ft (metric 6, 9, 12 m): total length plus waste divided by stock length, rounded up, with a note that cuts are not planned.
+- Must 3: source and check date stay visible under the chart (also on every size page).
+- Should 4: 10 pre-rendered pages, each with own title, H1, facts table, weight by length, worked example, size-specific use text, comparison with nearby sizes, 4 FAQ items with FAQPage and BreadcrumbList schema, and the calculator preset to the size: #3 to #8 per foot, 12 mm and 16 mm per meter, rebar weight chart (with "Print this chart"), how many pieces of rebar in a ton. All linked from the home page and from each other.
+- Should 6: price field (per lb, short ton, kg, metric ton) with a material cost total; cost also in copy and print.
+- Should 7: "Copy link" saves the takeoff in the URL hash (validated on load).
+- Nice 8: "Download CSV" (quoted cells, BOM for Excel).
+- Nice 9: size pages open with an example of 10 bars. Home keeps the empty state.
+- Nice 10 (part): HowTo schema on home, BreadcrumbList on new pages.
+- Size pages do not read or write the saved takeoff. Page titles are under 60 characters.
+- Tests: 28 of 28 pass (was 19). Build: 16 pages.
+
+### Skipped
+- Should 5 (epoxy or galvanized toggle): no citable figure checked; a number could be wrong.
+- Nice 10 (named author or reviewer line): no real reviewer exists; a fake name would be dishonest.
+- Example prefill on the home page: empty state kept for phones and so no one copies an example.
+- Long-tail pages beyond 10 (#9 to #18, 10, 20, 25 mm, PDF file): later.

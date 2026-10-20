@@ -1,0 +1,26 @@
+---
+import { pages } from '../data/pages.ts';
+import { url } from '../lib/url.ts';
+const { current = '' } = Astro.props;
+const groups = [
+  { title: 'US bar sizes', items: pages.filter((p) => p.kind === 'size' && p.mode === 'imperial') },
+  { title: 'Metric bar sizes', items: pages.filter((p) => p.kind === 'size' && p.mode === 'metric') },
+  { title: 'Charts and tons', items: pages.filter((p) => p.kind !== 'size') },
+];
+---
+<section aria-labelledby="sizes-h" class="mx-auto max-w-5xl px-4 pt-16">
+  <h2 id="sizes-h" class="text-2xl font-bold tracking-tight">Rebar weight by size</h2>
+  <p class="mt-2 max-w-2xl text-muted">Each page has the weight per foot or meter, the weight of common bar lengths, and the calculator set to that bar.</p>
+  <div class="mt-6 grid gap-6 sm:grid-cols-3">
+    {groups.map((g) => (
+      <nav aria-label={g.title}>
+        <h3 class="mb-2 text-sm font-semibold uppercase tracking-wide text-muted">{g.title}</h3>
+        <ul class="grid gap-1.5">
+          {g.items.filter((p) => p.slug !== current).map((p) => (
+            <li><a href={url(p.slug + '/')} class="underline-offset-4 hover:underline">{p.h1.charAt(0).toUpperCase() + p.h1.slice(1)}</a></li>
+          ))}
+        </ul>
+      </nav>
+    ))}
+  </div>
+</section>
