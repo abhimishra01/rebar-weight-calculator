@@ -1,49 +1,23 @@
-# Microtool site template
+# Rebar Weight Calculator
 
-Astro (static) + Tailwind 4. One config file: `src/site.config.ts`. No backend.
+Single-purpose web tool at rebarweightcalculator.com. It gives the weight of reinforcing bar from bar size, length and quantity. It handles many lines, US bars #3 to #18 (ASTM A615 nominal lb/ft), metric bars and plain round diameters, and shows totals in lb, kg, short tons and metric tons. It can copy a takeoff to a spreadsheet and print it.
 
-## Make a new tool
+## Where the logic lives
+- `src/lib/rebar.js`: bar tables, number and length parsing, line and total math.
+- `src/lib/takeoff.js`: the copy and print sheet (one data model, text and HTML output).
+- `src/lib/rows.js`: HTML for one input line, shared by the server and the browser.
+- `src/components/Tool.astro`: the calculator UI and its browser script.
+- `src/components/Article.astro`, `src/data/faq.ts`: the text and charts under the tool.
+- `src/site.config.ts`: name, domain, description, ad and analytics IDs.
 
-```
-cd ~/Desktop/personal/microtools
-template/scripts/new-tool.sh my-tool mytool.com
-cd sites/my-tool && npm run dev
-```
+## Commands
+- `npm install`, then `npm run dev` (local server).
+- `npm test`: unit tests for the math, parsing and takeoff (`test/rebar.test.mjs`).
+- `npm run build`: static site in `dist/`.
+- `npm run deploy`: runs tests, builds, deploys to Cloudflare Pages (needs `npx wrangler login` once, done by the owner).
 
-Then edit, in this order:
-1. `src/site.config.ts`: name, main keyword, supporting keywords, description, email, brand colour.
-2. `src/components/Tool.astro`: the real tool (replace the demo; keep the fixed height so the page does not jump).
-3. `src/components/Article.astro`: about 600 words of plain text. Main keyword in the first paragraph and one heading.
-4. `src/data/faq.ts`: 5 to 8 real questions. They also become FAQ schema.
-5. Optional: `public/og.png` (1200x630) and set `ogImage: '/og.png'`.
-6. Check About, Terms and Privacy text still fit the tool.
+## GitHub Pages
+The same build also serves from `https://abhimishra01.github.io/rebar-weight-calculator/`. Set `PAGES_BASE=/rebar-weight-calculator/` and `PAGES_SITE=https://abhimishra01.github.io` when you build. `.github/workflows/pages.yml` does this on every push to `main`. Canonical links always point to the real domain.
 
-Commands: `npm run dev` (work), `npm run build` (make `dist/`), `npm run preview` (check the build), `npm run deploy` (build and upload to Cloudflare Pages).
-
-## Go live (plain steps)
-
-1. **Buy the domain** after the tool works. `.com`, 1 year, auto-renew off. Put it in `site.config.ts` as `domain` (no `www`, no `https://`). Rebuild.
-2. **Cloudflare**: add the domain to Cloudflare (free plan) and change the nameservers at the registrar.
-3. **First deploy**: run `npx wrangler login` once (you do this, in your browser). Then `npm run deploy`. The first run asks to create the Pages project; use the same name as `cloudflareProject` in the config.
-4. **Custom domain**: Cloudflare dashboard > Workers & Pages > your project > Custom domains. Add `mytool.com` and `www.mytool.com`. Then add a redirect rule from `www` to the bare domain (or the reverse) so only one version exists.
-5. **No duplicate in Google**: `public/_headers` already sets `X-Robots-Tag: noindex` for the `*.pages.dev` address only. Check it: `curl -sI https://my-tool.pages.dev | grep -i robots` shows noindex; the custom domain does not.
-6. **Google Search Console**: add the domain property, verify with the DNS TXT record in Cloudflare, submit `https://mytool.com/sitemap-index.xml`, request indexing of the home page.
-7. **Bing Webmaster Tools**: sign in, import from Search Console.
-8. **Google Analytics**: create a GA4 property, copy the measurement ID (`G-...`) to `ga4` in the config, rebuild, deploy. Empty means off.
-9. **AdSense (later, about 10 visits a day or more)**: apply with the site. When approved, put the publisher ID (`ca-pub-...`) in `adsense`. The build then adds the script and writes `/ads.txt`. Set up the consent message in AdSense (Privacy & messaging) for EU/UK visitors. Then switch on Auto ads. A first rejection is normal; improve content and apply again.
-10. Share the tool on Reddit, Quora and social. Rankings take 4 to 6 months. Keep the domain at least a year.
-
-## How things work
-
-- **Dark mode**: follows the system, the toggle saves the choice. A tiny inline script sets it before paint, so there is no flash.
-- **SEO**: title, description, canonical (real domain), Open Graph, Twitter, `WebApplication` and `FAQPage` JSON-LD are in `src/layouts/Base.astro` and `src/pages/index.astro`.
-- **Sitemap and robots**: `@astrojs/sitemap` makes `/sitemap-index.xml`; `/robots.txt` points to it. The 404 page is excluded.
-- **ads.txt**: generated from `adsense`. Empty ID gives a comment line only.
-- **Favicon**: `/favicon.svg` is made from the first letter of the name and the brand colour (`src/pages/favicon.svg.ts`). To use your own, put a file at `public/favicon.svg` and delete that `.ts` file. For Apple and old browsers add `public/apple-touch-icon.png` (180x180) and a `<link rel="apple-touch-icon">` line in `Base.astro`.
-- **GA4 and AdSense** load only when their IDs are set (`src/components/Analytics.astro`). These are the only outside requests.
-- **Fonts**: system font stack, no downloads.
-- **Deploy script**: `scripts/deploy.mjs` reads `cloudflareProject` and runs `wrangler pages deploy dist`. It needs Node 22.6 or newer.
-
-## Legal pages
-
-The About, Terms and Privacy pages are good starting text, not legal advice. Read them before you launch and edit what does not match your tool.
+## Data check
+Weights were checked against ASTM A615 Table 1 on 2026-10-20 (see `reviews/SUMMARY.md`).

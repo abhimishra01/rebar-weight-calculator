@@ -1,5 +1,8 @@
 node_modules
 dist
+dist-*
 .astro
 .wrangler
 .playwright-cli/
+screenshots/
+tmp-*/
