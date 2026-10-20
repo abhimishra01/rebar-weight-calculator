@@ -1,4 +1,5 @@
-@import "tailwindcss";
+@import "tailwindcss" source(none);
+@source "../";
 @custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));
 
 @theme inline {
@@ -132,7 +133,6 @@ select.rb-in { appearance: none; padding-right: 2rem; background-image: url("dat
 .tbl thead th { background: var(--brand-soft); font-size: .8rem; }
 .tbl thead th:first-child { background: var(--brand-soft); }
 .tbl tbody tr:last-child td { border-bottom: 0; }
-.tbl caption { text-align: left; padding: .6rem .8rem; font-weight: 650; caption-side: top; }
 
 .print-only { display: none; }
 @media print {
@@ -147,3 +147,13 @@ select.rb-in { appearance: none; padding-right: 2rem; background-image: url("dat
   #print-area th, #print-area td { border: 1px solid #000; padding: 4pt 6pt; text-align: right; }
   #print-area th:first-child, #print-area td:first-child, #print-area tfoot th { text-align: left; }
 }
+
+/* sticky total, phones only */
+.rb-sticky { position: fixed; left: 0; right: 0; bottom: 0; z-index: 15; display: flex; align-items: baseline; gap: .75rem; padding: .7rem 1rem calc(.7rem + env(safe-area-inset-bottom)); background: var(--ink); color: var(--paper); border-top: 3px solid var(--brand); box-shadow: 0 -6px 20px rgb(0 0 0 / .18); }
+.rb-sticky[hidden] { display: none; }
+.rb-sticky-cap { font-size: .75rem; text-transform: uppercase; letter-spacing: .06em; opacity: .75; }
+.rb-sticky-val { font-family: var(--font-mono); font-weight: 700; font-size: 1.25rem; font-variant-numeric: tabular-nums; }
+.rb-sticky-alt { margin-left: auto; font-size: .85rem; opacity: .85; font-variant-numeric: tabular-nums; }
+@media (min-width: 640px) { .rb-sticky { display: none !important; } }
+.swipe-hint { display: none; }
+@media (max-width: 639px) { .swipe-hint { display: block; } }

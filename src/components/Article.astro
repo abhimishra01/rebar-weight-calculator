@@ -1,7 +1,5 @@
 ---
-import { IMPERIAL_BARS, METRIC_BARS, ISO_BARS, LB_PER_KG, FT_PER_M } from '../lib/rebar.js';
-const n = (v: number, d = 3) => v.toLocaleString('en-US', { minimumFractionDigits: d, maximumFractionDigits: d });
-const n0 = (v: number) => Math.round(v).toLocaleString('en-US');
+import { IMPERIAL_BARS, METRIC_BARS, ISO_BARS, kgPerM, lbPerFt, fmt } from '../lib/rebar.js';
 ---
 <section aria-labelledby="about-tool" class="mx-auto max-w-5xl px-4 pt-16">
   <article class="prose-site">
@@ -25,30 +23,30 @@ const n0 = (v: number) => Math.round(v).toLocaleString('en-US');
 
 <section aria-labelledby="chart-h" class="mx-auto max-w-5xl px-4 pt-12">
   <h2 id="chart-h" class="mb-4 text-2xl font-bold tracking-tight">Rebar weight chart: US bar sizes #3 to #18</h2>
+  <p class="swipe-hint mb-2 text-sm text-muted">Swipe sideways to see more columns.</p>
   <div class="tbl-wrap" tabindex="0" role="region" aria-labelledby="chart-h">
     <table class="tbl">
       <caption class="sr-only">ASTM A615 nominal weight of US rebar sizes</caption>
       <thead><tr><th scope="col">Bar</th><th scope="col">Diameter, in</th><th scope="col">Area, in&sup2;</th><th scope="col">lb per ft</th><th scope="col">kg per m</th><th scope="col">lb per 20 ft bar</th><th scope="col">Feet per ton</th></tr></thead>
       <tbody>
         {IMPERIAL_BARS.map((b) => (
-          <tr><th scope="row" class="!text-left">{b.label}</th><td>{b.dia.toFixed(3)}</td><td>{b.area.toFixed(2)}</td><td>{b.w.toFixed(3)}</td><td>{n((b.w / LB_PER_KG) * FT_PER_M)}</td><td>{n(b.w * 20, 2)}</td><td>{n0(2000 / b.w)}</td></tr>
+          <tr><th scope="row" class="!text-left">{b.label}</th><td>{b.dia.toFixed(3)}</td><td>{b.area.toFixed(2)}</td><td>{b.w.toFixed(3)}</td><td>{fmt(kgPerM(b), 3)}</td><td>{fmt(b.w * 20)}</td><td>{fmt(2000 / b.w, 0)}</td></tr>
         ))}
       </tbody>
     </table>
   </div>
   <p class="prose-site -mt-3 mb-8 text-sm text-muted">Feet per ton uses the short ton of 2,000 lb. Bars come in 20, 40 and 60 foot stock lengths.</p>
+  <p class="prose-site -mt-2 mb-8 text-sm text-muted"><strong>Source:</strong> ASTM A615/A615M, Table 1 (nominal weights). Checked 2026-10-20.</p>
 
   <h2 class="mb-4 text-2xl font-bold tracking-tight">Metric rebar weight chart</h2>
+  <p class="swipe-hint mb-2 text-sm text-muted">Swipe sideways to see more columns.</p>
   <div class="tbl-wrap" tabindex="0" role="region" aria-label="Metric rebar weight chart">
     <table class="tbl">
       <caption class="sr-only">ASTM A615M metric bar sizes and round diameters</caption>
       <thead><tr><th scope="col">Bar</th><th scope="col">Diameter, mm</th><th scope="col">Area, mm&sup2;</th><th scope="col">kg per m</th><th scope="col">lb per ft</th><th scope="col">kg per 12 m bar</th></tr></thead>
       <tbody>
-        {METRIC_BARS.map((b) => (
-          <tr><th scope="row" class="!text-left">{b.label}</th><td>{b.dia.toFixed(1)}</td><td>{n0(b.area)}</td><td>{b.w.toFixed(3)}</td><td>{n((b.w * LB_PER_KG) / FT_PER_M)}</td><td>{n(b.w * 12, 2)}</td></tr>
-        ))}
-        {ISO_BARS.map((b) => (
-          <tr><th scope="row" class="!text-left">{b.label}</th><td>{b.dia.toFixed(1)}</td><td>{n0(b.area)}</td><td>{b.w.toFixed(3)}</td><td>{n((b.w * LB_PER_KG) / FT_PER_M)}</td><td>{n(b.w * 12, 2)}</td></tr>
+        {[...METRIC_BARS, ...ISO_BARS].map((b) => (
+          <tr><th scope="row" class="!text-left">{b.label}</th><td>{b.dia.toFixed(1)}</td><td>{fmt(b.area, 0)}</td><td>{b.w.toFixed(3)}</td><td>{fmt(lbPerFt(b), 3)}</td><td>{fmt(b.w * 12)}</td></tr>
         ))}
       </tbody>
     </table>
@@ -59,7 +57,7 @@ const n0 = (v: number) => Math.round(v).toLocaleString('en-US');
   <article class="prose-site">
     <h2 id="more-h" style="margin-top:0">Rebar weight per foot and per meter</h2>
     <p>The weight per foot comes from the cross-section area of the bar and the density of steel, about 490 lb per cubic foot. The nominal diameter is a round number. The real shape has ribs, so the standard lists a nominal weight for each size. Use that number, not a value from the diameter alone.</p>
-    <p>The metric chart lists two groups. The first group holds the ASTM metric designations, such as #16, which is the same bar as a US #5. The second group holds plain round diameters in millimeters. Their weight in kg/m is the diameter squared divided by 162.2. A 12 mm bar weighs 144 / 162.2, or 0.888 kg/m.</p>
+    <p>The metric chart lists two groups. The first group holds the ASTM metric designations, such as M16, which is the same steel as a US #5. The second group holds plain round diameters in millimeters. Their weight in kg/m is the diameter squared divided by 162.2. A 12 mm bar weighs 144 / 162.2, or 0.888 kg/m.</p>
 
     <p>Steel density also lets you check a weight by hand. A bar with a 1 inch diameter has an area of 0.785 square inches. Multiply by 12 inches and by 0.2836 pounds per cubic inch and you get 2.67 pounds per foot, the value for a #8 bar.</p>
 
@@ -74,7 +72,7 @@ const n0 = (v: number) => Math.round(v).toLocaleString('en-US');
 
     <h2>Which bar sizes are common</h2>
     <p>Small sizes do most of the work in slabs and walls. #3 and #4 bars appear in residential slabs, footings and stirrups. #5 and #6 bars carry beams, columns and foundation walls. #7 to #11 bars show up in bridge decks, piers and heavy footings. The #14 and #18 sizes are rare. Mills often roll them to order, so check lead times before you design around them.</p>
-    <p>On a job with many sizes, group the bars by size first. Enter one line per size and length, then read the subtotal for each size from the weight on that line. This also makes it easy to compare your takeoff with the supplier's bar list, which is usually grouped the same way.</p>
+    <p>On a job with many sizes, group the bars by size first. Enter one line per size and length, then read the weight on each line. This also makes it easy to compare your takeoff with the supplier's bar list, which is usually grouped the same way.</p>
 
     <h2>Copy or print the takeoff</h2>
     <p>Use <strong>Copy takeoff</strong> to put every line and the totals on your clipboard. The text is tab separated, so it pastes into Excel or Google Sheets as a table. Use <strong>Print</strong> for a clean one-page sheet without the menus. Your lines stay in this browser, so you can close the tab and come back. Nothing is sent to a server.</p>

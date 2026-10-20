@@ -4,7 +4,7 @@ import { totals, fmt } from '../lib/rebar.js';
 const first = DEFAULT_LINE.imperial;
 const t = totals('imperial', [first], 0);
 ---
-<section id="tool" aria-label="Rebar weight calculator" class="rb no-print rounded-2xl border border-line bg-card sm:shadow-[6px_6px_0_0_var(--line)]" data-mode="imperial">
+<section id="tool" aria-label="Rebar weight calculator" class="rb rounded-2xl border border-line bg-card sm:shadow-[6px_6px_0_0_var(--line)]" data-mode="imperial">
   <div class="rb-rib" aria-hidden="true"></div>
   <div class="rb-top">
     <fieldset class="rb-seg">
@@ -25,12 +25,12 @@ const t = totals('imperial', [first], 0);
       <svg viewBox="0 0 16 16" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M8 2.5v11M2.5 8h11"/></svg>
       Add a line
     </button>
-    <p class="rb-hint">Press Enter in a quantity box to add the next line.</p>
+    <p class="rb-hint" id="hint">Press Enter in a quantity box to add the next line.</p>
   </div>
 
-  <div class="rb-totals" role="region" aria-label="Totals">
+  <div class="rb-totals" id="totals" role="region" aria-label="Totals">
     <div class="rb-main" aria-live="polite" aria-atomic="true">
-      <p class="rb-cap" id="main-cap">Total weight</p>
+      <p class="rb-cap">Total weight</p>
       <p class="rb-big"><span id="main-val">{fmt(t.lb)}</span> <span id="main-unit">lb</span></p>
       <p class="rb-sub" id="main-sub">{fmt(t.shortTons, 3)} short tons</p>
     </div>
@@ -38,7 +38,7 @@ const t = totals('imperial', [first], 0);
       <div><dt id="alt1-cap">Kilograms</dt><dd id="alt1">{fmt(t.kg)}</dd></div>
       <div><dt id="alt2-cap">Metric tons</dt><dd id="alt2">{fmt(t.metricTonnes, 3)}</dd></div>
       <div><dt>Total length</dt><dd id="len">{fmt(t.lengthFt, 1)} ft</dd></div>
-      <div><dt>Bars</dt><dd id="count">100</dd></div>
+      <div><dt>Bars</dt><dd id="count">{t.count}</dd></div>
     </dl>
     <p id="note" class="rb-note" role="status"></p>
   </div>
@@ -51,14 +51,22 @@ const t = totals('imperial', [first], 0);
   </div>
 </section>
 
+<div id="sticky-total" class="rb-sticky" hidden aria-hidden="true">
+  <span class="rb-sticky-cap">Total</span>
+  <span class="rb-sticky-val"><span id="sticky-val">{fmt(t.lb)}</span> <span id="sticky-unit">lb</span></span>
+  <span class="rb-sticky-alt" id="sticky-alt">{fmt(t.kg)} kg</span>
+</div>
+
 <section id="print-area" class="print-only" aria-hidden="true"></section>
 
 <script>
-  import { totals, lineResult, fmt, parseNum, LB_PER_KG, findBar } from '../lib/rebar.js';
+  import { totals, lineResult, fmt, parseNum, barLength, findBar } from '../lib/rebar.js';
   import { rowHtml, DEFAULT_LINE } from '../lib/rows.js';
+  import { takeoffModel, takeoffText, takeoffHtml } from '../lib/takeoff.js';
 
   type Line = { size: string; a: string; b: string; qty: string };
   type Mode = 'imperial' | 'metric';
+  const MAX_LINES = 200;
   const $ = (id: string) => document.getElementById(id)!;
   const root = $('tool');
   const rowsEl = $('rows');
@@ -69,23 +77,26 @@ const t = totals('imperial', [first], 0);
   let waste = '0';
   const KEY = 'rebar-takeoff-v1';
 
+  // Read saved lines into fresh objects first, then apply, so bad data never leaves a half-loaded state.
   try {
     const raw = localStorage.getItem(KEY);
-    if (raw) {
-      const s = JSON.parse(raw);
-      if (s && (s.mode === 'imperial' || s.mode === 'metric')) {
-        mode = s.mode;
-        for (const m of ['imperial', 'metric'] as Mode[]) {
-          const ls = s.lines?.[m];
-          if (Array.isArray(ls) && ls.length && ls.length <= 200) {
-            store[m] = ls.map((l: Line) => ({
-              size: findBar(m, String(l.size)) ? String(l.size) : DEFAULT_LINE[m].size,
-              a: String(l.a ?? ''), b: String(l.b ?? ''), qty: String(l.qty ?? ''),
-            }));
-          }
+    const s = raw ? JSON.parse(raw) : null;
+    if (s && (s.mode === 'imperial' || s.mode === 'metric')) {
+      const next: Record<Mode, Line[]> = { imperial: store.imperial, metric: store.metric };
+      for (const m of ['imperial', 'metric'] as Mode[]) {
+        const ls = s.lines?.[m];
+        if (Array.isArray(ls) && ls.length && ls.length <= MAX_LINES) {
+          next[m] = ls.filter((l: unknown) => l && typeof l === 'object').map((l: any) => ({
+            size: findBar(m, String(l.size)) ? String(l.size) : DEFAULT_LINE[m].size,
+            a: String(l.a ?? ''), b: String(l.b ?? ''), qty: String(l.qty ?? ''),
+          }));
+          if (!next[m].length) next[m] = store[m];
         }
-        waste = String(s.waste ?? '0');
       }
+      store.imperial = next.imperial;
+      store.metric = next.metric;
+      mode = s.mode;
+      waste = String(s.waste ?? '0');
     }
   } catch {}
 
@@ -98,31 +109,41 @@ const t = totals('imperial', [first], 0);
     root.dataset.mode = mode;
     (document.querySelector(`input[name=units][value=${mode}]`) as HTMLInputElement).checked = true;
     wasteEl.value = waste;
+    const full = ls.length >= MAX_LINES;
+    ($('add') as HTMLButtonElement).disabled = full;
+    $('hint').textContent = full ? `${MAX_LINES} lines is the limit.` : 'Press Enter in a quantity box to add the next line.';
     if (focusLast) (rowsEl.querySelector('.rb-row:last-child [data-k=a]') as HTMLInputElement)?.focus();
     update();
   }
 
   const unit1 = () => (mode === 'imperial' ? 'lb' : 'kg');
 
+  function lineLabel(r: ReturnType<typeof lineResult>, blank: boolean) {
+    if (r.ok && !r.empty) return `${fmt(mode === 'imperial' ? r.lb : r.kg)} ${unit1()}`;
+    if (!r.ok && !blank) return 'Check entry';
+    return `0.00 ${unit1()}`;
+  }
+
   function update() {
     const ls = lines();
     const t = totals(mode, ls, waste);
     rowsEl.querySelectorAll<HTMLElement>('.rb-row').forEach((row, i) => {
-      const r = lineResult(mode, ls[i]);
+      const line = ls[i];
+      const r = lineResult(mode, line);
       const out = row.querySelector('[data-out]') as HTMLOutputElement;
-      const blank = !ls[i].a.trim() && !(ls[i].b || '').trim() && !ls[i].qty.trim();
-      out.textContent = r.ok && !r.empty ? `${fmt(mode === 'imperial' ? r.lb : r.kg)} ${unit1()}` : blank ? '0' : r.ok ? '0' : 'Check entry';
+      const blank = !line.a.trim() && !(line.b || '').trim() && !line.qty.trim();
+      out.textContent = lineLabel(r, blank);
       out.classList.toggle('rb-bad', !r.ok && !blank);
+      const lenBad = Number.isNaN(barLength(mode, line.a, line.b));
       row.querySelectorAll('[data-k]').forEach((el) => {
         const k = (el as HTMLElement).dataset.k!;
         if (k === 'size') return;
         const v = (el as HTMLInputElement).value;
-        const bad = v.trim() !== '' && (Number.isNaN(parseNum(v)) || (k === 'qty' && !Number.isInteger(parseNum(v))));
+        const bad = v.trim() !== '' && (k === 'qty' ? Number.isNaN(parseNum(v)) || !Number.isInteger(parseNum(v)) : lenBad);
         el.setAttribute('aria-invalid', bad ? 'true' : 'false');
       });
     });
     const imp = mode === 'imperial';
-    $('main-cap').textContent = 'Total weight';
     $('main-val').textContent = fmt(imp ? t.lb : t.kg);
     $('main-unit').textContent = unit1();
     $('main-sub').textContent = imp ? `${fmt(t.shortTons, 3)} short tons (2,000 lb)` : `${fmt(t.metricTonnes, 3)} metric tons`;
@@ -131,9 +152,10 @@ const t = totals('imperial', [first], 0);
     $('alt2-cap').textContent = imp ? 'Metric tons' : 'Short tons';
     $('alt2').textContent = fmt(imp ? t.metricTonnes : t.shortTons, 3);
     $('len').textContent = imp ? `${fmt(t.lengthFt, 1)} ft` : `${fmt(t.lengthM, 1)} m`;
-    let count = 0;
-    for (const l of ls) { const q = parseNum(l.qty); if (Number.isInteger(q)) count += q; }
-    $('count').textContent = count.toLocaleString('en-US');
+    $('count').textContent = t.count.toLocaleString('en-US');
+    $('sticky-val').textContent = fmt(imp ? t.lb : t.kg);
+    $('sticky-unit').textContent = unit1();
+    $('sticky-alt').textContent = imp ? `${fmt(t.kg)} kg` : `${fmt(t.lb)} lb`;
     const w = parseNum(waste);
     const notes: string[] = [];
     if (Number.isNaN(w) || w < 0) notes.push('Waste must be a number such as 5.');
@@ -164,7 +186,7 @@ const t = totals('imperial', [first], 0);
   });
   function addLine() {
     const ls = lines();
-    if (ls.length >= 200) return;
+    if (ls.length >= MAX_LINES) return;
     const last = ls[ls.length - 1];
     ls.push({ size: last.size, a: '', b: '', qty: '' });
     renderRows(true);
@@ -175,38 +197,16 @@ const t = totals('imperial', [first], 0);
     r.addEventListener('change', () => { mode = r.value as Mode; renderRows(); })
   );
   $('clear').addEventListener('click', () => {
-    store[mode] = [{ size: DEFAULT_LINE[mode].size, a: '', b: '', qty: '' }];
+    store[mode] = [{ ...DEFAULT_LINE[mode] }];
     waste = '0';
     renderRows();
     (rowsEl.querySelector('[data-k=size]') as HTMLElement)?.focus();
   });
 
-  function takeoff(sep: string) {
-    const imp = mode === 'imperial';
-    const w = parseNum(waste);
-    const head = ['Bar', imp ? 'Length (ft-in)' : 'Length (m)', 'Qty', 'Total length ' + (imp ? '(ft)' : '(m)'), imp ? 'Weight (lb)' : 'Weight (kg)'];
-    const out: string[][] = [head];
-    for (const l of lines()) {
-      const r = lineResult(mode, l);
-      if (!r.ok || r.empty) continue;
-      const bar = findBar(mode, l.size)!;
-      const len = imp ? `${parseNum(l.a)}'-${parseNum(l.b)}"` : String(parseNum(l.a));
-      out.push([bar.label, len, String(parseNum(l.qty)), r.totalLength.toFixed(2), (imp ? r.lb : r.kg).toFixed(2)]);
-    }
-    const t = totals(mode, lines(), waste);
-    out.push([]);
-    out.push(['Net weight', '', '', '', (imp ? t.netLb : t.netKg).toFixed(2)]);
-    if (w > 0) out.push([`Waste ${w}%`, '', '', '', ((imp ? t.lb - t.netLb : t.kg - t.netKg)).toFixed(2)]);
-    out.push(['Total weight', '', '', '', (imp ? t.lb : t.kg).toFixed(2)]);
-    out.push(['Total (other unit)', '', '', '', (imp ? t.kg : t.lb).toFixed(2) + (imp ? ' kg' : ' lb')]);
-    out.push([imp ? 'Short tons' : 'Metric tons', '', '', '', (imp ? t.shortTons : t.metricTonnes).toFixed(3)]);
-    return out.map((r) => r.join(sep)).join('\n');
-  }
-
   let timer: number | undefined;
   const say = (msg: string) => { const c = $('copied'); c.textContent = msg; clearTimeout(timer); timer = window.setTimeout(() => (c.textContent = ''), 2500); };
   $('copy').addEventListener('click', async () => {
-    const text = takeoff('\t');
+    const text = takeoffText(takeoffModel(mode, lines(), waste));
     try { await navigator.clipboard.writeText(text); say('Copied. Paste it into a spreadsheet.'); }
     catch {
       const ta = document.createElement('textarea'); ta.value = text; document.body.appendChild(ta); ta.select();
@@ -214,20 +214,22 @@ const t = totals('imperial', [first], 0);
       ta.remove();
     }
   });
-  $('print').addEventListener('click', () => {
-    const imp = mode === 'imperial';
-    const rows = lines().map((l) => ({ l, r: lineResult(mode, l) })).filter((x) => x.r.ok && !x.r.empty);
-    const t = totals(mode, lines(), waste);
-    const w = parseNum(waste);
-    $('print-area').innerHTML = `<h1>Rebar takeoff</h1><p>${new Date().toLocaleDateString('en-US')} &middot; Nominal ASTM A615 weights</p>
-      <table><thead><tr><th>Bar</th><th>Length ${imp ? '(ft-in)' : '(m)'}</th><th>Qty</th><th>Total length ${imp ? '(ft)' : '(m)'}</th><th>Weight ${imp ? '(lb)' : '(kg)'}</th></tr></thead><tbody>
-      ${rows.map(({ l, r }) => `<tr><td>${findBar(mode, l.size)!.label}</td><td>${imp ? `${parseNum(l.a)}'-${parseNum(l.b)}"` : parseNum(l.a)}</td><td>${parseNum(l.qty)}</td><td>${fmt(r.totalLength)}</td><td>${fmt(imp ? r.lb : r.kg)}</td></tr>`).join('')}
-      </tbody><tfoot><tr><th colspan="4">Net weight</th><td>${fmt(imp ? t.netLb : t.netKg)}</td></tr>
-      ${w > 0 ? `<tr><th colspan="4">Waste ${w}%</th><td>${fmt(imp ? t.lb - t.netLb : t.kg - t.netKg)}</td></tr>` : ''}
-      <tr><th colspan="4">Total weight</th><td>${fmt(imp ? t.lb : t.kg)} ${unit1()}</td></tr>
-      <tr><th colspan="4">${imp ? 'Kilograms / short tons' : 'Pounds / metric tons'}</th><td>${fmt(imp ? t.kg : t.lb)} / ${fmt(imp ? t.shortTons : t.metricTonnes, 3)}</td></tr></tfoot></table>`;
-    window.print();
+
+  // The print sheet is built right before any print (button, Ctrl+P or browser menu) and cleared after.
+  window.addEventListener('beforeprint', () => {
+    $('print-area').innerHTML = takeoffHtml(takeoffModel(mode, lines(), waste), new Date().toLocaleDateString('en-US'));
   });
+  window.addEventListener('afterprint', () => { $('print-area').innerHTML = ''; });
+  $('print').addEventListener('click', () => window.print());
+
+  // On phones, keep the total in view while the totals box is scrolled away.
+  const sticky = $('sticky-total');
+  let toolIn = false, totalsIn = true;
+  const syncSticky = () => { sticky.hidden = !(toolIn && !totalsIn); };
+  if ('IntersectionObserver' in window) {
+    new IntersectionObserver((es) => { toolIn = es[es.length - 1].isIntersecting; syncSticky(); }).observe(root);
+    new IntersectionObserver((es) => { totalsIn = es[es.length - 1].isIntersecting; syncSticky(); }).observe($('totals'));
+  }
 
   renderRows();
 </script>
