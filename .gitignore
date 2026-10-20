@@ -6,3 +6,4 @@ dist-*
 .playwright-cli/
 screenshots/
 tmp-*/
+dist-bingemind/
