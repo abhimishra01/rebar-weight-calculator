@@ -58,10 +58,11 @@ export function parseNum(text) {
   if (typeof text === 'number') return text;
   let s = String(text ?? '').trim();
   if (s === '') return 0;
-  // A comma is only a thousands separator (1,200). A decimal comma (12,5) is not valid: it would be a silent tenfold error.
+  // "1,200" has a thousands comma. "20,5" and "0,375" have a decimal comma.
   if (s.includes(',')) {
-    if (!/^\d{1,3}(,\d{3})+(\.\d+)?$/.test(s)) return NaN;
-    s = s.replace(/,/g, '');
+    if (/^\d{1,3}(,\d{3})+(\.\d+)?$/.test(s) && !/^0,/.test(s)) s = s.replace(/,/g, '');
+    else if (/^\d+,\d+$/.test(s)) s = s.replace(',', '.');
+    else return NaN;
   }
   let m = s.match(/^(\d+)\s+(\d+)\/(\d+)$/);
   if (m) return +m[1] + +m[2] / +m[3];
@@ -80,7 +81,12 @@ export function splitLength(mode, a, b) {
     const m = major.match(/^(.+?)\s*(?:'|ft|feet)\s*[- ]?\s*(.*?)\s*(?:"|in|inch|inches)?$/i);
     if (m) { major = m[1]; marked = m[2] === '' ? 0 : parseNum(m[2]); }
   }
-  const x = parseNum(major), y = parseNum(minor) + marked;
+  let x = parseNum(major), y = parseNum(minor) + marked;
+  // 20 ft 13 in is shown as 21 ft 1 in. The weight does not change.
+  if (mode === 'imperial' && Number.isFinite(x) && Number.isFinite(y) && y >= 12) {
+    x += Math.floor(y / 12);
+    y = Math.round((y % 12) * 1e6) / 1e6;
+  }
   return { major: x, minor: y };
 }
 

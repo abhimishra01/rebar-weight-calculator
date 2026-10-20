@@ -106,17 +106,29 @@ test('waste is read the same way everywhere (comma, fraction, percent sign, spac
   assert.equal(totals('imperial', lines, '1,000').lb, 2086); // thousands comma is read, but over 100% is refused
   assert.equal(totals('imperial', lines, '101').lb, 2086);
   close(totals('imperial', lines, '100').lb, 2086 * 2, 0.01);
-  assert.equal(totals('imperial', lines, '1,5').lb, 2086); // invalid, so no waste (the UI warns)
+  close(totals('imperial', lines, '1,5').lb, 2086 * 1.015, 0.001); // decimal comma
+  assert.equal(totals('imperial', lines, '1,5,5').lb, 2086); // invalid, so no waste (the UI warns)
   assert.equal(totals('imperial', lines, '5%').lb, 2086);
   assert.equal(totals('imperial', lines, '1e1').lb, 2086);
   assert.equal(totals('imperial', lines, '-3').lb, 2086);
 });
 
-test('a decimal comma is not read as a thousands separator', () => {
-  assert.ok(Number.isNaN(parseNum('12,5')));
-  assert.ok(Number.isNaN(parseNum('1,2')));
+test('a decimal comma is read as a decimal point, a three-digit group as thousands', () => {
+  assert.equal(parseNum('12,5'), 12.5);
+  assert.equal(parseNum('1,2'), 1.2);
+  assert.equal(parseNum('0,375'), 0.375);
   assert.equal(parseNum('1,200.5'), 1200.5);
-  assert.equal(lineResult('imperial', { size: '5', a: '12,5', b: 0, qty: 1 }).ok, false);
+  assert.equal(parseNum('1,200'), 1200);
+  assert.ok(Number.isNaN(parseNum('1,2,3')));
+  assert.ok(Number.isNaN(parseNum('1,5.5')));
+  close(lineResult('imperial', { size: '5', a: '20,5', b: 0, qty: 1 }).lb, 20.5 * 1.043, 0.001);
+});
+
+test('inches of 12 or more are shown as feet and inches', () => {
+  assert.deepEqual(splitLength('imperial', '20', '13'), { major: 21, minor: 1 });
+  assert.deepEqual(splitLength('imperial', '20', '12'), { major: 21, minor: 0 });
+  assert.deepEqual(splitLength('imperial', '20', '6'), { major: 20, minor: 6 });
+  close(lineResult('imperial', { size: '5', a: '20', b: '13', qty: 1 }).lb, (20 + 13 / 12) * 1.043, 0.001);
 });
 
 test('huge input is invalid, not a silent zero', () => {
@@ -159,7 +171,7 @@ test('takeoff text and print use the same rows and the same waste line', () => {
 });
 
 test('takeoff with bad waste adds no waste row', () => {
-  const m = takeoffModel('imperial', [{ size: '5', a: 20, b: 0, qty: 100 }], '1,5');
+  const m = takeoffModel('imperial', [{ size: '5', a: 20, b: 0, qty: 100 }], '1,5,5');
   assert.equal(m.wastePct, 0);
   assert.doesNotMatch(takeoffText(m), /Waste/);
 });
