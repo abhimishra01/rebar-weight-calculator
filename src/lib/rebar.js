@@ -91,13 +91,17 @@ export function barLength(mode, a, b) {
   return mode === 'imperial' ? x + y / 12 : x;
 }
 
+// Sanity limits, far above any real job: one bar up to 1,000 ft (300 m), up to 1,000,000 bars, waste up to 100%.
+export const LIMITS = { lengthFt: 1000, lengthM: 300, qty: 1000000, waste: 100 };
+
 // One line: { size, a, b, qty }. Imperial a = feet, b = inches. Metric a = meters.
 // Returns { ok, length (per bar, ft or m), totalLength, lb, kg }
 export function lineResult(mode, line) {
   const bar = findBar(mode, line.size);
   const len = barLength(mode, line.a, line.b);
   const qty = parseNum(line.qty);
-  if (!bar || !Number.isFinite(len) || !Number.isFinite(qty) || qty < 0 || !Number.isInteger(qty)) {
+  const maxLen = mode === 'imperial' ? LIMITS.lengthFt : LIMITS.lengthM;
+  if (!bar || !Number.isFinite(len) || len > maxLen || !Number.isFinite(qty) || qty < 0 || qty > LIMITS.qty || !Number.isInteger(qty)) {
     return { ok: false, lb: 0, kg: 0, totalLength: 0, empty: false };
   }
   const totalLength = len * qty;
@@ -110,14 +114,14 @@ export function lineResult(mode, line) {
 // Sum all lines. waste is a percent added on top (for laps, cut-offs, scrap).
 export function totals(mode, lines, wastePct = 0) {
   const parsed = parseNum(wastePct);
-  const w = Number.isFinite(parsed) && parsed > 0 ? parsed : 0;
+  const w = Number.isFinite(parsed) && parsed > 0 && parsed <= LIMITS.waste ? parsed : 0;
   let net = 0, len = 0, bad = 0, count = 0;
   for (const l of lines) {
     const r = lineResult(mode, l);
     if (!r.ok) { bad++; continue; }
     net += r.kg;
     len += r.totalLength;
-    count += parseNum(l.qty);
+    if (!r.empty) count += parseNum(l.qty);
   }
   const kg = net * (1 + w / 100);
   const lb = kg * LB_PER_KG;

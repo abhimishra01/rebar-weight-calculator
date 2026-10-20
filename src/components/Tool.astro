@@ -80,7 +80,7 @@ const t = totals(pmode, [first], 0);
 <section id="print-area" class="print-only" aria-hidden="true"></section>
 
 <script>
-  import { totals, lineResult, fmt, parseNum, barLength, findBar, barsToOrder, materialCost, STOCK_LENGTHS } from '../lib/rebar.js';
+  import { totals, lineResult, fmt, parseNum, barLength, findBar, barsToOrder, materialCost, STOCK_LENGTHS, LIMITS } from '../lib/rebar.js';
   import { rowHtml, infoText, DEFAULT_LINE } from '../lib/rows.js';
   import { takeoffModel, takeoffText, takeoffHtml, takeoffCsv } from '../lib/takeoff.js';
   import { encodeShare, decodeShare } from '../lib/share.js';
@@ -184,12 +184,13 @@ const t = totals(pmode, [first], 0);
       out.textContent = lineLabel(r, blank);
       out.classList.toggle('rb-bad', !r.ok && !blank);
       (row.querySelector('[data-info]') as HTMLElement).textContent = infoText(mode, line);
-      const lenBad = Number.isNaN(barLength(mode, line.a, line.b));
+      const bl = barLength(mode, line.a, line.b);
+      const lenBad = Number.isNaN(bl) || bl > (mode === 'imperial' ? LIMITS.lengthFt : LIMITS.lengthM);
       row.querySelectorAll('[data-k]').forEach((el) => {
         const k = (el as HTMLElement).dataset.k!;
         if (k === 'size') return;
         const v = (el as HTMLInputElement).value;
-        const bad = v.trim() !== '' && (k === 'qty' ? Number.isNaN(parseNum(v)) || !Number.isInteger(parseNum(v)) : lenBad);
+        const bad = v.trim() !== '' && (k === 'qty' ? Number.isNaN(parseNum(v)) || !Number.isInteger(parseNum(v)) || parseNum(v) > LIMITS.qty : lenBad);
         el.setAttribute('aria-invalid', bad ? 'true' : 'false');
       });
     });
@@ -208,20 +209,20 @@ const t = totals(pmode, [first], 0);
     $('sticky-alt').textContent = imp ? `${fmt(t.kg)} kg` : `${fmt(t.lb)} lb`;
     const w = parseNum(waste);
     // Bars to order: total length plus the waste allowance, divided by each stock length.
-    const allow = Number.isFinite(w) && w > 0 ? 1 + w / 100 : 1;
+    const allow = Number.isFinite(w) && w > 0 && w <= LIMITS.waste ? 1 + w / 100 : 1;
     const totalLen = (imp ? t.lengthFt : t.lengthM) * allow;
     const stocks = STOCK_LENGTHS[mode];
     $('order').hidden = !(totalLen > 0);
-    $('chips').innerHTML = stocks.map((L) => `<span class="rb-chip">${L} ${imp ? 'ft' : 'm'}: <b>${barsToOrder(totalLen, L).toLocaleString('en-US')}</b> bars</span>`).join('');
+    $('chips').innerHTML = stocks.map((L) => { const n = barsToOrder(totalLen, L); return `<span class="rb-chip">${L} ${imp ? 'ft' : 'm'}: <b>${n.toLocaleString('en-US')}</b> ${n === 1 ? 'bar' : 'bars'}</span>`; }).join('');
     const cost = materialCost(price, priceUnit, t.lb, t.kg);
     const hasPrice = price.trim() !== '' && parseNum(price) > 0;
     $('cost-wrap').hidden = !(hasPrice && Number.isFinite(cost));
     $('cost').textContent = Number.isFinite(cost) ? '$' + fmt(cost) : '';
     const notes: string[] = [];
-    if (Number.isNaN(w) || w < 0) notes.push('Waste must be a number such as 5.');
+    if (Number.isNaN(w) || w < 0 || w > LIMITS.waste) notes.push('Waste must be a number from 0 to 100, such as 5.');
     else if (w > 0) notes.push(`Includes ${w}% extra. Net weight ${fmt(imp ? t.netLb : t.netKg)} ${unit1()}.`);
     if (price.trim() !== '' && Number.isNaN(parseNum(price))) notes.push('Price must be a number such as 0.85.');
-    if (t.invalid) notes.push(`${t.invalid} line${t.invalid > 1 ? 's' : ''} left out. Use whole numbers for quantity and numbers for length.`);
+    if (t.invalid) notes.push(`${t.invalid} line${t.invalid > 1 ? 's' : ''} left out. Use whole numbers for quantity and numbers for length. Limits: ${LIMITS.qty.toLocaleString('en-US')} bars, ${mode === 'imperial' ? `${LIMITS.lengthFt} ft` : `${LIMITS.lengthM} m`} per bar.`);
     $('note').textContent = notes.join(' ');
     save();
   }

@@ -1,5 +1,5 @@
 // The takeoff sheet: one data model, rendered as tab-separated text (copy) and as an HTML table (print).
-import { totals, lineResult, splitLength, findBar, parseNum, fmt, materialCost } from './rebar.js';
+import { totals, lineResult, splitLength, findBar, parseNum, fmt, materialCost, LIMITS } from './rebar.js';
 
 // price (optional): { text, unit }. A cost row appears only when the price is a valid number above zero.
 export function takeoffModel(mode, lines, wastePct, price) {
@@ -19,7 +19,7 @@ export function takeoffModel(mode, lines, wastePct, price) {
       weight: imp ? r.lb : r.kg,
     });
   }
-  const wastePctUsed = w > 0 ? w : 0;
+  const wastePctUsed = w > 0 && w <= LIMITS.waste ? w : 0;
   const cost = price && parseNum(price.text) > 0 ? materialCost(price.text, price.unit, t.lb, t.kg) : NaN;
   const priceLabel = price && parseNum(price.text) > 0 ? `$${fmt(parseNum(price.text))} per ${{ lb: 'lb', ton: 'short ton', kg: 'kg', tonne: 'metric ton' }[price.unit]}` : '';
   return {
@@ -39,16 +39,19 @@ export function takeoffModel(mode, lines, wastePct, price) {
   };
 }
 
+// Same rounding as fmt() on screen and in print, but without thousands commas, so a pasted number is a number.
+const plain = (n, d = 2) => (Number.isFinite(n) ? n : 0).toLocaleString('en-US', { useGrouping: false, minimumFractionDigits: d, maximumFractionDigits: d });
+
 export function takeoffText(m, sep = '\t') {
   const out = [['Bar', `Length (${m.imp ? 'ft-in' : 'm'})`, 'Qty', `Total length (${m.lengthUnit})`, `Weight (${m.unit})`]];
-  for (const r of m.rows) out.push([r.bar, r.length, String(r.qty), r.totalLength.toFixed(2), r.weight.toFixed(2)]);
+  for (const r of m.rows) out.push([r.bar, r.length, String(r.qty), plain(r.totalLength, 2), plain(r.weight, 2)]);
   out.push([]);
-  out.push(['Net weight', '', '', '', m.net.toFixed(2)]);
-  if (m.wastePct > 0) out.push([`Waste ${m.wastePct}%`, '', '', '', m.wasteWeight.toFixed(2)]);
-  out.push(['Total weight', '', '', '', m.total.toFixed(2)]);
-  out.push([m.other.label, '', '', '', m.other.value.toFixed(2)]);
-  out.push([m.tons.label, '', '', '', m.tons.value.toFixed(3)]);
-  if (m.cost !== null) out.push([`Material cost (${m.priceLabel})`, '', '', '', m.cost.toFixed(2)]);
+  out.push(['Net weight', '', '', '', plain(m.net, 2)]);
+  if (m.wastePct > 0) out.push([`Waste ${m.wastePct}%`, '', '', '', plain(m.wasteWeight, 2)]);
+  out.push(['Total weight', '', '', '', plain(m.total, 2)]);
+  out.push([m.other.label, '', '', '', plain(m.other.value, 2)]);
+  out.push([m.tons.label, '', '', '', plain(m.tons.value, 3)]);
+  if (m.cost !== null) out.push([`Material cost (${m.priceLabel})`, '', '', '', plain(m.cost, 2)]);
   if (m.left) out.push([`${m.left} line${m.left > 1 ? 's' : ''} left out (check entry)`]);
   return out.map((r) => r.join(sep)).join('\n');
 }

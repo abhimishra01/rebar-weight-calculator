@@ -103,7 +103,9 @@ test('waste is read the same way everywhere (comma, fraction, percent sign, spac
   const lines = [{ size: '5', a: 20, b: 0, qty: 100 }];
   close(totals('imperial', lines, '1/2').lb, 2086 * 1.005, 0.001);
   close(totals('imperial', lines, ' 5').lb, 2086 * 1.05, 0.001);
-  close(totals('imperial', lines, '1,000').lb, 2086 * 11, 0.01); // thousands comma
+  assert.equal(totals('imperial', lines, '1,000').lb, 2086); // thousands comma is read, but over 100% is refused
+  assert.equal(totals('imperial', lines, '101').lb, 2086);
+  close(totals('imperial', lines, '100').lb, 2086 * 2, 0.01);
   assert.equal(totals('imperial', lines, '1,5').lb, 2086); // invalid, so no waste (the UI warns)
   assert.equal(totals('imperial', lines, '5%').lb, 2086);
   assert.equal(totals('imperial', lines, '1e1').lb, 2086);
@@ -246,4 +248,11 @@ test('line help shows weight per foot and per bar', () => {
   assert.match(infoText('imperial', { size: '4', a: 'abc', b: '', qty: '' }), /One 20 ft bar: 13\.36 lb\./);
   assert.match(infoText('metric', { size: 'D12', a: '', b: '', qty: '' }), /^12 mm bar: 0\.888 kg\/m \(0\.597 lb\/ft\)\. One 12 m bar: 10\.65 kg\.$/);
   assert.equal(infoText('imperial', { size: 'zz', a: '', b: '', qty: '' }), '');
+});
+
+test('sanity limits: huge lengths and counts are refused, empty length adds no bars', () => {
+  assert.equal(lineResult('imperial', { size: '5', a: '999999999', b: '', qty: '999999999' }).ok, false);
+  assert.equal(lineResult('imperial', { size: '5', a: '20', b: '', qty: '1000001' }).ok, false);
+  assert.equal(lineResult('metric', { size: 'M16', a: '301', b: '', qty: '1' }).ok, false);
+  assert.equal(totals('imperial', [{ size: '5', a: '', b: '', qty: '10' }], 0).count, 0);
 });
