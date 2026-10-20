@@ -1,0 +1,76 @@
+/* Skin: Swiss. Open page, black rules, no radius, no shadow, huge result number.
+   Tokens first, then surface rules. Switched by data-skin="swiss" on <html>. */
+:root[data-skin="swiss"] {
+  --paper: #ffffff;
+  --card: #ffffff;
+  --ink: #0a0a0a;
+  --muted: #575757;
+  --line: #c9c9c9;          /* hairlines, decoration only */
+  --edge: #0a0a0a;          /* input and button edges (WCAG 1.4.11) */
+  --fill: #f2f2f2;          /* input and output fill */
+  --brand-ink: color-mix(in oklab, var(--brand) 88%, black);
+  --brand-soft: #f2f2f2;
+  --font-sans: "Helvetica Neue", Helvetica, Arial, ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+}
+:root[data-skin="swiss"][data-theme="dark"] {
+  --paper: #0b0b0b;
+  --card: #0b0b0b;
+  --ink: #f4f4f4;
+  --muted: #a8a8a8;
+  --line: #3a3a3a;
+  --edge: #f4f4f4;
+  --fill: #1a1a1a;
+  --brand-ink: color-mix(in oklab, var(--brand) 50%, white);
+  --brand-soft: #1a1a1a;
+}
+:root[data-skin="swiss"][data-theme] :focus-visible { outline: 3px solid var(--brand-ink); outline-offset: 2px; border-radius: 0; }
+
+/* Header and hero */
+:root[data-skin="swiss"][data-theme] header { border-bottom: 2px solid var(--ink); background: var(--paper); backdrop-filter: none; }
+:root[data-skin="swiss"][data-theme] header img { border-radius: 0; }
+:root[data-skin="swiss"][data-theme] header nav a { border-radius: 0; }
+:root[data-skin="swiss"][data-theme] header nav a[aria-current="page"] { background: none; box-shadow: inset 0 -3px 0 var(--brand-ink); }
+:root[data-skin="swiss"][data-theme] #theme-toggle { border-radius: 0; border: 1px solid var(--edge); background: var(--paper); }
+:root[data-skin="swiss"][data-theme] main > section:first-child > p:first-child { padding: 0; background: none; border-radius: 0; text-transform: uppercase; letter-spacing: .08em; font-size: .75rem; font-weight: 700; color: var(--brand-ink); }
+:root[data-skin="swiss"][data-theme] main h1 { font-weight: 700; letter-spacing: -0.04em; line-height: .96; font-size: clamp(2.5rem, 6vw, 4.5rem); max-width: 18ch; }
+:root[data-skin="swiss"][data-theme] main > section:first-child > h1 + p { max-width: 60ch; }
+:root[data-skin="swiss"][data-theme] footer { border-top: 2px solid var(--ink); }
+:root[data-skin="swiss"][data-theme] .prose-site h2 { font-weight: 700; letter-spacing: -0.03em; border-top: 2px solid var(--ink); padding-top: .75rem; }
+:root[data-skin="swiss"][data-theme] .prose-site th { background: var(--fill); }
+:root[data-skin="swiss"][data-theme] .prose-site th, :root[data-skin="swiss"][data-theme] .prose-site td { border-bottom-color: var(--line); }
+:root[data-skin="swiss"][data-theme] #faq-h { border-top: 2px solid var(--ink); padding-top: .75rem; }
+
+/* Tool shell: no card, no shadow */
+:root[data-skin="swiss"][data-theme] #tool { border: 0; border-top: 2px solid var(--ink); border-radius: 0; box-shadow: none; background: transparent; padding-inline: 0; }
+:root[data-skin="swiss"][data-theme] #tool :where(button, input, select, textarea, div, form, section, fieldset, dl, figure, label, span, a, svg, p, small, b) { border-radius: 0; }
+
+/* Rebar tool */
+:root[data-skin="swiss"][data-theme] .rb-rib { height: 8px; }
+:root[data-skin="swiss"][data-theme] .rb-seg { padding: 0; gap: 0; border: 1px solid var(--edge); border-radius: 0; background: transparent; }
+:root[data-skin="swiss"][data-theme] .rb-seg span { border-radius: 0; color: var(--ink); }
+:root[data-skin="swiss"][data-theme] .rb-seg input:checked + span { background: var(--ink); color: var(--paper); }
+:root[data-skin="swiss"][data-theme] .rb-f label, :root[data-skin="swiss"][data-theme] .rb-lab { text-transform: uppercase; letter-spacing: .07em; font-size: .75rem; font-weight: 700; color: var(--muted); }
+:root[data-skin="swiss"][data-theme] .rb-in { border: 0; border-bottom: 2px solid var(--edge); border-radius: 0; background: var(--fill); }
+:root[data-skin="swiss"][data-theme] .rb-in:focus { box-shadow: none; outline: 3px solid var(--brand-ink); outline-offset: 2px; }
+:root[data-skin="swiss"][data-theme] .rb-in[aria-invalid="true"] { border-bottom-color: #b91c1c; }
+:root[data-skin="swiss"][data-theme="dark"] .rb-in[aria-invalid="true"] { border-bottom-color: #f87171; }
+:root[data-skin="swiss"][data-theme] .rb-row { border: 0; border-top: 2px solid var(--ink); border-radius: 0; background: transparent; }
+:root[data-skin="swiss"][data-theme] .rb-del { border-radius: 0; }
+:root[data-skin="swiss"][data-theme] .rb-btn { border: 1px solid var(--edge); border-radius: 0; background: transparent; color: var(--ink); }
+:root[data-skin="swiss"][data-theme] .rb-btn:hover { background: var(--fill); border-color: var(--edge); }
+:root[data-skin="swiss"][data-theme] .rb-btn-primary { background: var(--brand); border-color: var(--brand); color: #fff; }
+:root[data-skin="swiss"][data-theme] .rb-btn-primary:hover { background: var(--brand); filter: brightness(1.12); }
+:root[data-skin="swiss"][data-theme] .rb-totals { background: var(--brand); color: #fff; border: 0; border-radius: 0; }
+:root[data-skin="swiss"][data-theme] .rb-cap, :root[data-skin="swiss"][data-theme] .rb-grid dt { color: #fff; opacity: .9; }
+:root[data-skin="swiss"][data-theme] .rb-sub, :root[data-skin="swiss"][data-theme] .rb-note { color: #fff; }
+:root[data-skin="swiss"][data-theme] .rb-big { font-family: var(--font-sans); font-weight: 700; letter-spacing: -.045em; font-size: clamp(3rem, 12vw, 5.5rem); line-height: 1; }
+:root[data-skin="swiss"][data-theme] .rb-big #main-unit { color: #fff; opacity: .85; font-weight: 600; }
+:root[data-skin="swiss"][data-theme] .rb-grid dd { font-family: var(--font-sans); font-weight: 700; }
+:root[data-skin="swiss"][data-theme] .tbl-wrap { border: 0; border-top: 2px solid var(--ink); border-radius: 0; }
+:root[data-skin="swiss"][data-theme] .tbl, :root[data-skin="swiss"][data-theme] .tbl th:first-child, :root[data-skin="swiss"][data-theme] .tbl td:first-child { background: var(--paper); }
+:root[data-skin="swiss"][data-theme] .tbl thead th, :root[data-skin="swiss"][data-theme] .tbl thead th:first-child { background: var(--fill); }
+:root[data-skin="swiss"][data-theme] .rb-sticky { border-top: 3px solid var(--brand); }
+:root[data-skin="swiss"][data-theme] .rb-top, :root[data-skin="swiss"][data-theme] .rb-rows, :root[data-skin="swiss"][data-theme] .rb-add, :root[data-skin="swiss"][data-theme] .rb-actions { padding-inline: 0; }
+:root[data-skin="swiss"][data-theme] .rb-row { padding-left: 0; }
+:root[data-skin="swiss"][data-theme] .rb-totals { margin-inline: 0; }
+:root[data-skin="swiss"][data-theme] .rb-rib { margin-bottom: 0; }

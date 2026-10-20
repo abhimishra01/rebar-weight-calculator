@@ -14,7 +14,8 @@ export default {
   email: 'hello@rebarweightcalculator.com',
   ga4: '',
   adsense: '',
-  brand: '#c2410c',
+  brand: '#b91c1c',
+  skin: 'swiss',                      // visual skin: minimal, swiss, clay or retro
   locale: 'en-US',
   ogImage: '/og.png',
   category: 'UtilitiesApplication',

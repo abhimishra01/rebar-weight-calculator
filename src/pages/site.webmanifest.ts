@@ -10,7 +10,7 @@ export const GET: APIRoute = () =>
     start_url: url(),
     scope: url(),
     display: 'standalone',
-    background_color: '#f7f6f2',
+    background_color: '#ffffff',
     theme_color: site.brand,
     icons: [
       { src: url('icon-192.png'), sizes: '192x192', type: 'image/png' },
