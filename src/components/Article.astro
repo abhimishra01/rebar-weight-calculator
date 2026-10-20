@@ -1,0 +1,82 @@
+---
+import { IMPERIAL_BARS, METRIC_BARS, ISO_BARS, LB_PER_KG, FT_PER_M } from '../lib/rebar.js';
+const n = (v: number, d = 3) => v.toLocaleString('en-US', { minimumFractionDigits: d, maximumFractionDigits: d });
+const n0 = (v: number) => Math.round(v).toLocaleString('en-US');
+---
+<section aria-labelledby="about-tool" class="mx-auto max-w-5xl px-4 pt-16">
+  <article class="prose-site">
+    <h2 id="about-tool" style="margin-top:0">What a rebar weight calculator does</h2>
+    <p>A rebar weight calculator turns a bar size, a length and a count into a weight. You need that number to price steel, plan a delivery, check a truck load or compare a supplier quote with your takeoff. This calculator uses the nominal weights from ASTM A615, the standard for deformed carbon steel bars in the United States. It gives the total in pounds, kilograms, short tons and metric tons at the same time.</p>
+
+    <h2>How to calculate rebar weight</h2>
+    <ol>
+      <li>Pick the bar size. In the US the number is the diameter in eighths of an inch. A #5 bar is 5/8 inch.</li>
+      <li>Enter the length of one bar in feet and inches.</li>
+      <li>Enter how many bars have that length.</li>
+      <li>Add a line for each other size or length. The totals update as you type.</li>
+      <li>Add a waste percentage if you want an allowance for laps and cut-offs.</li>
+    </ol>
+    <p>The math is short. Weight equals pounds per foot times length times quantity. For #3 to #8 bars you can also use a shortcut: the bar number squared times 0.04172 gives pounds per foot. For a #6 bar that is 36 &times; 0.04172, or 1.502 lb/ft.</p>
+
+    <h2>Worked example</h2>
+    <p>You need 100 pieces of #5 bar, each 20 feet long. A #5 bar weighs 1.043 lb/ft. Each piece weighs 20 &times; 1.043, or 20.86 lb. One hundred pieces weigh 2,086 lb. That is 1.043 short tons, or about 946 kg. Add 5 percent for laps and cut-offs and the order weight becomes 2,190 lb.</p>
+  </article>
+</section>
+
+<section aria-labelledby="chart-h" class="mx-auto max-w-5xl px-4 pt-12">
+  <h2 id="chart-h" class="mb-4 text-2xl font-bold tracking-tight">Rebar weight chart: US bar sizes #3 to #18</h2>
+  <div class="tbl-wrap" tabindex="0" role="region" aria-labelledby="chart-h">
+    <table class="tbl">
+      <caption class="sr-only">ASTM A615 nominal weight of US rebar sizes</caption>
+      <thead><tr><th scope="col">Bar</th><th scope="col">Diameter, in</th><th scope="col">Area, in&sup2;</th><th scope="col">lb per ft</th><th scope="col">kg per m</th><th scope="col">lb per 20 ft bar</th><th scope="col">Feet per ton</th></tr></thead>
+      <tbody>
+        {IMPERIAL_BARS.map((b) => (
+          <tr><th scope="row" class="!text-left">{b.label}</th><td>{b.dia.toFixed(3)}</td><td>{b.area.toFixed(2)}</td><td>{b.w.toFixed(3)}</td><td>{n((b.w / LB_PER_KG) * FT_PER_M)}</td><td>{n(b.w * 20, 2)}</td><td>{n0(2000 / b.w)}</td></tr>
+        ))}
+      </tbody>
+    </table>
+  </div>
+  <p class="prose-site -mt-3 mb-8 text-sm text-muted">Feet per ton uses the short ton of 2,000 lb. Bars come in 20, 40 and 60 foot stock lengths.</p>
+
+  <h2 class="mb-4 text-2xl font-bold tracking-tight">Metric rebar weight chart</h2>
+  <div class="tbl-wrap" tabindex="0" role="region" aria-label="Metric rebar weight chart">
+    <table class="tbl">
+      <caption class="sr-only">ASTM A615M metric bar sizes and round diameters</caption>
+      <thead><tr><th scope="col">Bar</th><th scope="col">Diameter, mm</th><th scope="col">Area, mm&sup2;</th><th scope="col">kg per m</th><th scope="col">lb per ft</th><th scope="col">kg per 12 m bar</th></tr></thead>
+      <tbody>
+        {METRIC_BARS.map((b) => (
+          <tr><th scope="row" class="!text-left">{b.label}</th><td>{b.dia.toFixed(1)}</td><td>{n0(b.area)}</td><td>{b.w.toFixed(3)}</td><td>{n((b.w * LB_PER_KG) / FT_PER_M)}</td><td>{n(b.w * 12, 2)}</td></tr>
+        ))}
+        {ISO_BARS.map((b) => (
+          <tr><th scope="row" class="!text-left">{b.label}</th><td>{b.dia.toFixed(1)}</td><td>{n0(b.area)}</td><td>{b.w.toFixed(3)}</td><td>{n((b.w * LB_PER_KG) / FT_PER_M)}</td><td>{n(b.w * 12, 2)}</td></tr>
+        ))}
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section aria-labelledby="more-h" class="mx-auto max-w-5xl px-4 pt-6">
+  <article class="prose-site">
+    <h2 id="more-h" style="margin-top:0">Rebar weight per foot and per meter</h2>
+    <p>The weight per foot comes from the cross-section area of the bar and the density of steel, about 490 lb per cubic foot. The nominal diameter is a round number. The real shape has ribs, so the standard lists a nominal weight for each size. Use that number, not a value from the diameter alone.</p>
+    <p>The metric chart lists two groups. The first group holds the ASTM metric designations, such as #16, which is the same bar as a US #5. The second group holds plain round diameters in millimeters. Their weight in kg/m is the diameter squared divided by 162.2. A 12 mm bar weighs 144 / 162.2, or 0.888 kg/m.</p>
+
+    <p>Steel density also lets you check a weight by hand. A bar with a 1 inch diameter has an area of 0.785 square inches. Multiply by 12 inches and by 0.2836 pounds per cubic inch and you get 2.67 pounds per foot, the value for a #8 bar.</p>
+
+    <h2>Tips for a reliable takeoff</h2>
+    <ul>
+      <li>Count laps. A splice usually adds 30 to 40 bar diameters. Add them to the length, or use the waste field.</li>
+      <li>Bends add length. Measure bent bars along the bar, not in a straight line between the ends.</li>
+      <li>Allow for cut-offs. Bars arrive in stock lengths, and the remainder is often scrap.</li>
+      <li>Check the units on a quote. A short ton is 2,000 lb. A metric ton is 1,000 kg, or 2,204.6 lb.</li>
+      <li>Expect small differences on the scale. ASTM A615 lets an individual bar weigh up to 6 percent under the nominal weight.</li>
+    </ul>
+
+    <h2>Which bar sizes are common</h2>
+    <p>Small sizes do most of the work in slabs and walls. #3 and #4 bars appear in residential slabs, footings and stirrups. #5 and #6 bars carry beams, columns and foundation walls. #7 to #11 bars show up in bridge decks, piers and heavy footings. The #14 and #18 sizes are rare. Mills often roll them to order, so check lead times before you design around them.</p>
+    <p>On a job with many sizes, group the bars by size first. Enter one line per size and length, then read the subtotal for each size from the weight on that line. This also makes it easy to compare your takeoff with the supplier's bar list, which is usually grouped the same way.</p>
+
+    <h2>Copy or print the takeoff</h2>
+    <p>Use <strong>Copy takeoff</strong> to put every line and the totals on your clipboard. The text is tab separated, so it pastes into Excel or Google Sheets as a table. Use <strong>Print</strong> for a clean one-page sheet without the menus. Your lines stay in this browser, so you can close the tab and come back. Nothing is sent to a server.</p>
+  </article>
+</section>

@@ -1,0 +1,233 @@
+---
+import { rowHtml, DEFAULT_LINE } from '../lib/rows.js';
+import { totals, fmt } from '../lib/rebar.js';
+const first = DEFAULT_LINE.imperial;
+const t = totals('imperial', [first], 0);
+---
+<section id="tool" aria-label="Rebar weight calculator" class="rb no-print rounded-2xl border border-line bg-card sm:shadow-[6px_6px_0_0_var(--line)]" data-mode="imperial">
+  <div class="rb-rib" aria-hidden="true"></div>
+  <div class="rb-top">
+    <fieldset class="rb-seg">
+      <legend class="sr-only">Units</legend>
+      <label><input type="radio" name="units" value="imperial" checked><span>US bars #3 to #18<small>feet, inches, lb</small></span></label>
+      <label><input type="radio" name="units" value="metric"><span>Metric bars<small>meters, kg</small></span></label>
+    </fieldset>
+    <div class="rb-f rb-waste">
+      <label for="waste">Waste or laps, %</label>
+      <input id="waste" class="rb-in" type="text" inputmode="decimal" autocomplete="off" value="0" placeholder="0">
+    </div>
+  </div>
+
+  <div id="rows" class="rb-rows" set:html={rowHtml('imperial', first, 0, false)}></div>
+
+  <div class="rb-add">
+    <button type="button" id="add" class="rb-btn rb-btn-ghost">
+      <svg viewBox="0 0 16 16" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M8 2.5v11M2.5 8h11"/></svg>
+      Add a line
+    </button>
+    <p class="rb-hint">Press Enter in a quantity box to add the next line.</p>
+  </div>
+
+  <div class="rb-totals" role="region" aria-label="Totals">
+    <div class="rb-main" aria-live="polite" aria-atomic="true">
+      <p class="rb-cap" id="main-cap">Total weight</p>
+      <p class="rb-big"><span id="main-val">{fmt(t.lb)}</span> <span id="main-unit">lb</span></p>
+      <p class="rb-sub" id="main-sub">{fmt(t.shortTons, 3)} short tons</p>
+    </div>
+    <dl class="rb-grid">
+      <div><dt id="alt1-cap">Kilograms</dt><dd id="alt1">{fmt(t.kg)}</dd></div>
+      <div><dt id="alt2-cap">Metric tons</dt><dd id="alt2">{fmt(t.metricTonnes, 3)}</dd></div>
+      <div><dt>Total length</dt><dd id="len">{fmt(t.lengthFt, 1)} ft</dd></div>
+      <div><dt>Bars</dt><dd id="count">100</dd></div>
+    </dl>
+    <p id="note" class="rb-note" role="status"></p>
+  </div>
+
+  <div class="rb-actions">
+    <button type="button" id="copy" class="rb-btn rb-btn-primary">Copy takeoff</button>
+    <button type="button" id="print" class="rb-btn">Print</button>
+    <button type="button" id="clear" class="rb-btn rb-btn-ghost">Clear</button>
+    <span id="copied" class="rb-copied" role="status"></span>
+  </div>
+</section>
+
+<section id="print-area" class="print-only" aria-hidden="true"></section>
+
+<script>
+  import { totals, lineResult, fmt, parseNum, LB_PER_KG, findBar } from '../lib/rebar.js';
+  import { rowHtml, DEFAULT_LINE } from '../lib/rows.js';
+
+  type Line = { size: string; a: string; b: string; qty: string };
+  type Mode = 'imperial' | 'metric';
+  const $ = (id: string) => document.getElementById(id)!;
+  const root = $('tool');
+  const rowsEl = $('rows');
+  const wasteEl = $('waste') as HTMLInputElement;
+
+  let mode: Mode = 'imperial';
+  const store: Record<Mode, Line[]> = { imperial: [{ ...DEFAULT_LINE.imperial }], metric: [{ ...DEFAULT_LINE.metric }] };
+  let waste = '0';
+  const KEY = 'rebar-takeoff-v1';
+
+  try {
+    const raw = localStorage.getItem(KEY);
+    if (raw) {
+      const s = JSON.parse(raw);
+      if (s && (s.mode === 'imperial' || s.mode === 'metric')) {
+        mode = s.mode;
+        for (const m of ['imperial', 'metric'] as Mode[]) {
+          const ls = s.lines?.[m];
+          if (Array.isArray(ls) && ls.length && ls.length <= 200) {
+            store[m] = ls.map((l: Line) => ({
+              size: findBar(m, String(l.size)) ? String(l.size) : DEFAULT_LINE[m].size,
+              a: String(l.a ?? ''), b: String(l.b ?? ''), qty: String(l.qty ?? ''),
+            }));
+          }
+        }
+        waste = String(s.waste ?? '0');
+      }
+    }
+  } catch {}
+
+  const lines = () => store[mode];
+  const save = () => { try { localStorage.setItem(KEY, JSON.stringify({ mode, lines: store, waste })); } catch {} };
+
+  function renderRows(focusLast = false) {
+    const ls = lines();
+    rowsEl.innerHTML = ls.map((l, i) => rowHtml(mode, l, i, ls.length > 1)).join('');
+    root.dataset.mode = mode;
+    (document.querySelector(`input[name=units][value=${mode}]`) as HTMLInputElement).checked = true;
+    wasteEl.value = waste;
+    if (focusLast) (rowsEl.querySelector('.rb-row:last-child [data-k=a]') as HTMLInputElement)?.focus();
+    update();
+  }
+
+  const unit1 = () => (mode === 'imperial' ? 'lb' : 'kg');
+
+  function update() {
+    const ls = lines();
+    const t = totals(mode, ls, waste);
+    rowsEl.querySelectorAll<HTMLElement>('.rb-row').forEach((row, i) => {
+      const r = lineResult(mode, ls[i]);
+      const out = row.querySelector('[data-out]') as HTMLOutputElement;
+      const blank = !ls[i].a.trim() && !(ls[i].b || '').trim() && !ls[i].qty.trim();
+      out.textContent = r.ok && !r.empty ? `${fmt(mode === 'imperial' ? r.lb : r.kg)} ${unit1()}` : blank ? '0' : r.ok ? '0' : 'Check entry';
+      out.classList.toggle('rb-bad', !r.ok && !blank);
+      row.querySelectorAll('[data-k]').forEach((el) => {
+        const k = (el as HTMLElement).dataset.k!;
+        if (k === 'size') return;
+        const v = (el as HTMLInputElement).value;
+        const bad = v.trim() !== '' && (Number.isNaN(parseNum(v)) || (k === 'qty' && !Number.isInteger(parseNum(v))));
+        el.setAttribute('aria-invalid', bad ? 'true' : 'false');
+      });
+    });
+    const imp = mode === 'imperial';
+    $('main-cap').textContent = 'Total weight';
+    $('main-val').textContent = fmt(imp ? t.lb : t.kg);
+    $('main-unit').textContent = unit1();
+    $('main-sub').textContent = imp ? `${fmt(t.shortTons, 3)} short tons (2,000 lb)` : `${fmt(t.metricTonnes, 3)} metric tons`;
+    $('alt1-cap').textContent = imp ? 'Kilograms' : 'Pounds';
+    $('alt1').textContent = fmt(imp ? t.kg : t.lb);
+    $('alt2-cap').textContent = imp ? 'Metric tons' : 'Short tons';
+    $('alt2').textContent = fmt(imp ? t.metricTonnes : t.shortTons, 3);
+    $('len').textContent = imp ? `${fmt(t.lengthFt, 1)} ft` : `${fmt(t.lengthM, 1)} m`;
+    let count = 0;
+    for (const l of ls) { const q = parseNum(l.qty); if (Number.isInteger(q)) count += q; }
+    $('count').textContent = count.toLocaleString('en-US');
+    const w = parseNum(waste);
+    const notes: string[] = [];
+    if (Number.isNaN(w) || w < 0) notes.push('Waste must be a number such as 5.');
+    else if (w > 0) notes.push(`Includes ${w}% extra. Net weight ${fmt(imp ? t.netLb : t.netKg)} ${unit1()}.`);
+    if (t.invalid) notes.push(`${t.invalid} line${t.invalid > 1 ? 's' : ''} left out. Use whole numbers for quantity and numbers for length.`);
+    $('note').textContent = notes.join(' ');
+    save();
+  }
+
+  rowsEl.addEventListener('input', (e) => {
+    const el = e.target as HTMLInputElement;
+    const row = el.closest('.rb-row') as HTMLElement | null;
+    if (!row || !el.dataset.k) return;
+    (lines()[+row.dataset.row!] as any)[el.dataset.k] = el.value;
+    update();
+  });
+  rowsEl.addEventListener('click', (e) => {
+    const btn = (e.target as HTMLElement).closest('[data-del]');
+    if (!btn) return;
+    const i = +(btn.closest('.rb-row') as HTMLElement).dataset.row!;
+    lines().splice(i, 1);
+    renderRows();
+    (rowsEl.querySelector('[data-k=size]') as HTMLElement)?.focus();
+  });
+  rowsEl.addEventListener('keydown', (e) => {
+    const el = e.target as HTMLInputElement;
+    if (e.key === 'Enter' && el.dataset?.k === 'qty') { e.preventDefault(); addLine(); }
+  });
+  function addLine() {
+    const ls = lines();
+    if (ls.length >= 200) return;
+    const last = ls[ls.length - 1];
+    ls.push({ size: last.size, a: '', b: '', qty: '' });
+    renderRows(true);
+  }
+  $('add').addEventListener('click', addLine);
+  wasteEl.addEventListener('input', () => { waste = wasteEl.value; update(); });
+  document.querySelectorAll<HTMLInputElement>('input[name=units]').forEach((r) =>
+    r.addEventListener('change', () => { mode = r.value as Mode; renderRows(); })
+  );
+  $('clear').addEventListener('click', () => {
+    store[mode] = [{ size: DEFAULT_LINE[mode].size, a: '', b: '', qty: '' }];
+    waste = '0';
+    renderRows();
+    (rowsEl.querySelector('[data-k=size]') as HTMLElement)?.focus();
+  });
+
+  function takeoff(sep: string) {
+    const imp = mode === 'imperial';
+    const w = parseNum(waste);
+    const head = ['Bar', imp ? 'Length (ft-in)' : 'Length (m)', 'Qty', 'Total length ' + (imp ? '(ft)' : '(m)'), imp ? 'Weight (lb)' : 'Weight (kg)'];
+    const out: string[][] = [head];
+    for (const l of lines()) {
+      const r = lineResult(mode, l);
+      if (!r.ok || r.empty) continue;
+      const bar = findBar(mode, l.size)!;
+      const len = imp ? `${parseNum(l.a)}'-${parseNum(l.b)}"` : String(parseNum(l.a));
+      out.push([bar.label, len, String(parseNum(l.qty)), r.totalLength.toFixed(2), (imp ? r.lb : r.kg).toFixed(2)]);
+    }
+    const t = totals(mode, lines(), waste);
+    out.push([]);
+    out.push(['Net weight', '', '', '', (imp ? t.netLb : t.netKg).toFixed(2)]);
+    if (w > 0) out.push([`Waste ${w}%`, '', '', '', ((imp ? t.lb - t.netLb : t.kg - t.netKg)).toFixed(2)]);
+    out.push(['Total weight', '', '', '', (imp ? t.lb : t.kg).toFixed(2)]);
+    out.push(['Total (other unit)', '', '', '', (imp ? t.kg : t.lb).toFixed(2) + (imp ? ' kg' : ' lb')]);
+    out.push([imp ? 'Short tons' : 'Metric tons', '', '', '', (imp ? t.shortTons : t.metricTonnes).toFixed(3)]);
+    return out.map((r) => r.join(sep)).join('\n');
+  }
+
+  let timer: number | undefined;
+  const say = (msg: string) => { const c = $('copied'); c.textContent = msg; clearTimeout(timer); timer = window.setTimeout(() => (c.textContent = ''), 2500); };
+  $('copy').addEventListener('click', async () => {
+    const text = takeoff('\t');
+    try { await navigator.clipboard.writeText(text); say('Copied. Paste it into a spreadsheet.'); }
+    catch {
+      const ta = document.createElement('textarea'); ta.value = text; document.body.appendChild(ta); ta.select();
+      try { document.execCommand('copy'); say('Copied. Paste it into a spreadsheet.'); } catch { say('Copy failed. Select the numbers by hand.'); }
+      ta.remove();
+    }
+  });
+  $('print').addEventListener('click', () => {
+    const imp = mode === 'imperial';
+    const rows = lines().map((l) => ({ l, r: lineResult(mode, l) })).filter((x) => x.r.ok && !x.r.empty);
+    const t = totals(mode, lines(), waste);
+    const w = parseNum(waste);
+    $('print-area').innerHTML = `<h1>Rebar takeoff</h1><p>${new Date().toLocaleDateString('en-US')} &middot; Nominal ASTM A615 weights</p>
+      <table><thead><tr><th>Bar</th><th>Length ${imp ? '(ft-in)' : '(m)'}</th><th>Qty</th><th>Total length ${imp ? '(ft)' : '(m)'}</th><th>Weight ${imp ? '(lb)' : '(kg)'}</th></tr></thead><tbody>
+      ${rows.map(({ l, r }) => `<tr><td>${findBar(mode, l.size)!.label}</td><td>${imp ? `${parseNum(l.a)}'-${parseNum(l.b)}"` : parseNum(l.a)}</td><td>${parseNum(l.qty)}</td><td>${fmt(r.totalLength)}</td><td>${fmt(imp ? r.lb : r.kg)}</td></tr>`).join('')}
+      </tbody><tfoot><tr><th colspan="4">Net weight</th><td>${fmt(imp ? t.netLb : t.netKg)}</td></tr>
+      ${w > 0 ? `<tr><th colspan="4">Waste ${w}%</th><td>${fmt(imp ? t.lb - t.netLb : t.kg - t.netKg)}</td></tr>` : ''}
+      <tr><th colspan="4">Total weight</th><td>${fmt(imp ? t.lb : t.kg)} ${unit1()}</td></tr>
+      <tr><th colspan="4">${imp ? 'Kilograms / short tons' : 'Pounds / metric tons'}</th><td>${fmt(imp ? t.kg : t.lb)} / ${fmt(imp ? t.shortTons : t.metricTonnes, 3)}</td></tr></tfoot></table>`;
+    window.print();
+  });
+
+  renderRows();
+</script>
