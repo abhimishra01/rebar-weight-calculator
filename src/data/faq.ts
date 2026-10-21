@@ -2,6 +2,7 @@
 export const faq = [
   { q: 'How do you calculate the weight of rebar?', a: 'Multiply the weight per foot by the length and by the number of bars. A #5 bar weighs 1.043 lb/ft. One 20 foot bar weighs 20.86 lb, and 100 bars weigh 2,086 lb. This calculator does the steps for every line you enter and adds them up.' },
   { q: 'How much does #4 rebar weigh per foot?', a: 'A #4 bar weighs 0.668 lb per foot, which is 0.994 kg per meter. A 20 foot bar weighs 13.36 lb. About 150 bars of 20 feet make one short ton.' },
+  { q: 'What is the #3 to #8 rebar weight per foot?', a: 'The #3 to #8 rebar weight per foot runs from 0.376 lb for #3 to 2.670 lb for #8. In between, #4 is 0.668, #5 is 1.043, #6 is 1.502 and #7 is 2.044 lb/ft. Each size has its own page with the weight of common bar lengths.' },
   { q: 'How many pieces of rebar are in a ton?', a: 'Divide 2,000 lb by the weight of one bar. For 20 foot bars, a ton holds about 266 pieces of #3, 150 of #4, 96 of #5, 67 of #6 and 49 of #7. The chart on this page lists the feet per ton for every size.' },
   { q: 'What does #5 rebar weigh?', a: 'A #5 bar weighs 1.043 lb per foot and has a nominal diameter of 0.625 inch. A 20 foot length weighs 20.86 lb and a 40 foot length weighs 41.72 lb.' },
   { q: 'What do the rebar numbers mean?', a: 'For bars #3 to #8 the number is the diameter in eighths of an inch. A #6 bar is 6/8 inch, or 0.75 inch. Sizes #9, #10, #11, #14 and #18 are set by area. Their diameters match the old square bar sizes.' },
