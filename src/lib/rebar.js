@@ -19,19 +19,19 @@ export const IMPERIAL_BARS = [
   { id: '18', label: '#18', dia: 2.257, area: 4.0, w: 13.6 },
 ];
 
-// ASTM A615M soft-metric sizes. dia = mm, area = mm2, w = kg/m, us = the US bar with the same steel.
+// ASTM A615M soft-metric sizes, named metric #10, #13 ... (not M10, and not Canadian CSA 10M, which is a different bar). id stays M.. for saved URLs. dia = mm, area = mm2, w = kg/m, us = the US bar with the same steel.
 export const METRIC_BARS = [
-  { id: 'M10', label: 'M10 (US #3)', us: '3', dia: 9.5, area: 71, w: 0.56 },
-  { id: 'M13', label: 'M13 (US #4)', us: '4', dia: 12.7, area: 129, w: 0.994 },
-  { id: 'M16', label: 'M16 (US #5)', us: '5', dia: 15.9, area: 199, w: 1.552 },
-  { id: 'M19', label: 'M19 (US #6)', us: '6', dia: 19.1, area: 284, w: 2.235 },
-  { id: 'M22', label: 'M22 (US #7)', us: '7', dia: 22.2, area: 387, w: 3.042 },
-  { id: 'M25', label: 'M25 (US #8)', us: '8', dia: 25.4, area: 510, w: 3.973 },
-  { id: 'M29', label: 'M29 (US #9)', us: '9', dia: 28.7, area: 645, w: 5.06 },
-  { id: 'M32', label: 'M32 (US #10)', us: '10', dia: 32.3, area: 819, w: 6.404 },
-  { id: 'M36', label: 'M36 (US #11)', us: '11', dia: 35.8, area: 1006, w: 7.907 },
-  { id: 'M43', label: 'M43 (US #14)', us: '14', dia: 43.0, area: 1452, w: 11.38 },
-  { id: 'M57', label: 'M57 (US #18)', us: '18', dia: 57.3, area: 2581, w: 20.24 },
+  { id: 'M10', label: 'Metric #10 (US #3)', us: '3', dia: 9.5, area: 71, w: 0.56 },
+  { id: 'M13', label: 'Metric #13 (US #4)', us: '4', dia: 12.7, area: 129, w: 0.994 },
+  { id: 'M16', label: 'Metric #16 (US #5)', us: '5', dia: 15.9, area: 199, w: 1.552 },
+  { id: 'M19', label: 'Metric #19 (US #6)', us: '6', dia: 19.1, area: 284, w: 2.235 },
+  { id: 'M22', label: 'Metric #22 (US #7)', us: '7', dia: 22.2, area: 387, w: 3.042 },
+  { id: 'M25', label: 'Metric #25 (US #8)', us: '8', dia: 25.4, area: 510, w: 3.973 },
+  { id: 'M29', label: 'Metric #29 (US #9)', us: '9', dia: 28.7, area: 645, w: 5.06 },
+  { id: 'M32', label: 'Metric #32 (US #10)', us: '10', dia: 32.3, area: 819, w: 6.404 },
+  { id: 'M36', label: 'Metric #36 (US #11)', us: '11', dia: 35.8, area: 1006, w: 7.907 },
+  { id: 'M43', label: 'Metric #43 (US #14)', us: '14', dia: 43.0, area: 1452, w: 11.38 },
+  { id: 'M57', label: 'Metric #57 (US #18)', us: '18', dia: 57.3, area: 2581, w: 20.24 },
 ];
 
 // Plain round diameters used in many countries: kg/m = d^2 x pi/4 x 7850 kg/m3 (about d^2 / 162.2)
