@@ -10,9 +10,9 @@ export default {
   keyword: 'rebar weight calculator', // main keyword: goes in the H1 and title
   keywords: ['rebar weight', 'rebar weight chart', 'rebar weight per foot', 'rebar weight per foot table', 'rebar sizes', '#4 rebar weight', 'rebar takeoff', 'ASTM A615 rebar weight', 'rebar weight per meter'],
   tagline: 'Bar #3 to #18 in lb, kg and tons',
-  homeTitle: 'Rebar Weight Calculator: #3 to #18 in lb, kg, tons', // under 60 characters
+  homeTitle: 'Rebar Weight Calculator and Chart: Weight Per Foot', // under 60 characters
   description:
-    'Free rebar weight calculator. Enter bar size, length and quantity to get total lb, kg and tons. ASTM A615 weights, metric bars, copy or print the list.',
+    'Free rebar weight calculator and rebar weight chart. Enter bar size, length and quantity for total lb, kg and tons. ASTM A615 weight per foot, #3 to #18.',
   email: 'hello@rebarweightcalculator.com',
   // Bingemind build (SITE_MODE=bingemind): owner is Bingemind, contact goes to the Bingemind contact section (no invented email).
   bingemind,

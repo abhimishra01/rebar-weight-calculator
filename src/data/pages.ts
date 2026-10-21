@@ -18,7 +18,7 @@ export const pages: PageDef[] = [
   {
     kind: 'size', slug: '3-rebar-weight-per-foot', mode: 'imperial', bar: '3',
     h1: '#3 rebar weight per foot', title: '#3 Rebar Weight Per Foot: 0.376 lb/ft, Calculator',
-    description: 'A #3 rebar weighs 0.376 lb per foot. See weight by length, bars per ton and a calculator set to #3 bars.',
+    description: 'A #3 rebar weighs 0.376 lb per foot. See #3 rebar weight by length, bars per ton, a worked example and a free calculator.',
     uses: [
       'The #3 bar is the smallest size in common structural use. It is light and easy to bend, so it goes where the steel is thin and the loads are small. Typical jobs are stirrups and ties in beams and columns, light patio and walkway slabs, and vertical bars in masonry cells.',
       'Many builders buy #3 bars already bent to shape. Weigh each bent shape by its unfolded length, not by the box it fits in. The calculator above works from the unfolded length.',
@@ -28,7 +28,7 @@ export const pages: PageDef[] = [
   {
     kind: 'size', slug: '4-rebar-weight-per-foot', mode: 'imperial', bar: '4',
     h1: '#4 rebar weight per foot', title: '#4 Rebar Weight Per Foot: 0.668 lb/ft, Calculator',
-    description: 'A #4 rebar weighs 0.668 lb per foot, or 13.36 lb for a 20 ft bar. Weight by length, bars per ton and a #4 calculator.',
+    description: 'A #4 rebar weighs 0.668 lb per foot, or 13.36 lb for a 20 ft bar. #4 weight by length, bars per ton and a free calculator.',
     uses: [
       'The #4 bar, at 1/2 inch, is one of the most common sizes on houses and small commercial work. Slabs on grade, driveways, footings, masonry walls and small retaining walls often call for it. The plans set the spacing.',
       'Because #4 is so common, yards stock it in many lengths and often sell it by the bundle. Ask the yard how many pieces are in a bundle before you convert a count to tons.',
@@ -38,7 +38,7 @@ export const pages: PageDef[] = [
   {
     kind: 'size', slug: '5-rebar-weight-per-foot', mode: 'imperial', bar: '5',
     h1: '#5 rebar weight per foot', title: '#5 Rebar Weight Per Foot: 1.043 lb/ft, Calculator',
-    description: 'A #5 rebar weighs 1.043 lb per foot, or 20.86 lb for a 20 ft bar. Weight by length, bars per ton and a #5 calculator.',
+    description: 'A #5 rebar weighs 1.043 lb per foot, or 20.86 lb for a 20 ft bar. #5 weight by length, bars per ton and a free calculator.',
     uses: [
       'The #5 bar, at 5/8 inch, steps up from the slab bars to the bars that carry load in beams, footings and foundation walls. It is a usual choice for grade beams, strip footings and lintels.',
       'A crew can still cut and bend this size with a hand bender or a small bar bender. A long piece is awkward to carry alone, so plan two people for 40 ft and 60 ft lengths.',
@@ -48,7 +48,7 @@ export const pages: PageDef[] = [
   {
     kind: 'size', slug: '6-rebar-weight-per-foot', mode: 'imperial', bar: '6',
     h1: '#6 rebar weight per foot', title: '#6 Rebar Weight Per Foot: 1.502 lb/ft, Calculator',
-    description: 'A #6 rebar weighs 1.502 lb per foot, or 30.04 lb for a 20 ft bar. Weight by length, bars per ton and a #6 calculator.',
+    description: 'A #6 rebar weighs 1.502 lb per foot, or 30.04 lb for a 20 ft bar. #6 weight by length, bars per ton and a free calculator.',
     uses: [
       'The #6 bar, at 3/4 inch, is a main bar in beams, columns, retaining walls and thick slabs. An engineer picks #6 when a #5 would need too many bars to fit in the member. Fewer, larger bars save labor and leave more room for concrete to flow.',
       'Hand bending gets hard at this size. Many crews use a power bender, or order the bars bent by the supplier.',
@@ -58,7 +58,7 @@ export const pages: PageDef[] = [
   {
     kind: 'size', slug: '7-rebar-weight-per-foot', mode: 'imperial', bar: '7',
     h1: '#7 rebar weight per foot', title: '#7 Rebar Weight Per Foot: 2.044 lb/ft, Calculator',
-    description: 'A #7 rebar weighs 2.044 lb per foot, or 40.88 lb for a 20 ft bar. Weight by length, bars per ton and a #7 calculator.',
+    description: 'A #7 rebar weighs 2.044 lb per foot, or 40.88 lb for a 20 ft bar. #7 weight by length, bars per ton and a free calculator.',
     uses: [
       'The #7 bar, at 7/8 inch, shows up in heavy beams, columns, pile caps and thick mat foundations. Sizes from #7 up are more common on commercial and civil jobs than on houses.',
       'Check what the yard has in stock before you detail around a #7 bar. Some yards carry fewer lengths of it than of #5 or #6.',
@@ -68,7 +68,7 @@ export const pages: PageDef[] = [
   {
     kind: 'size', slug: '8-rebar-weight-per-foot', mode: 'imperial', bar: '8',
     h1: '#8 rebar weight per foot', title: '#8 Rebar Weight Per Foot: 2.670 lb/ft, Calculator',
-    description: 'A #8 rebar weighs 2.670 lb per foot, or 53.4 lb for a 20 ft bar. Weight by length, bars per ton and a #8 calculator.',
+    description: 'A #8 rebar weighs 2.670 lb per foot, or 53.4 lb for a 20 ft bar. #8 weight by length, bars per ton and a free calculator.',
     uses: [
       'The #8 bar is exactly 1 inch in nominal diameter. It carries large loads in columns, pier caps, heavy beams and bridge parts.',
       'A 20 ft piece weighs 53.4 lb and a 60 ft piece weighs 160.2 lb. Plan the lifting before the bars arrive. Long pieces need two people, a lift or a crane.',
@@ -99,8 +99,8 @@ export const pages: PageDef[] = [
   },
   {
     kind: 'chart', slug: 'rebar-weight-chart', h1: 'Rebar weight chart',
-    title: 'Rebar Weight Chart: #3 to #18, lb/ft and kg/m',
-    description: 'Rebar weight chart for US bars #3 to #18 and metric bars. Diameter, area, lb per foot, kg per meter and weight per 20 ft bar. Print it.',
+    title: 'Rebar Weight Chart: Weight Per Foot, #3 to #18',
+    description: 'Rebar weight chart for US bars #3 to #18 and metric bars. Rebar weight per foot, kg per meter, diameter, area and weight of a 20 ft bar. Print it.',
   },
   {
     kind: 'tons', slug: 'how-many-pieces-of-rebar-in-a-ton', h1: 'How many pieces of rebar in a ton',
