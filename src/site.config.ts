@@ -26,5 +26,5 @@ export default {
   locale: 'en-US',
   ogImage: '/og.png',
   category: 'UtilitiesApplication',
-  owner: bingemind ? 'Bingemind' : 'Rebar Weight Calculator',
+  owner: bingemind ? 'Bingemind (Abhishek Mishra)' : 'Rebar Weight Calculator',
 };
